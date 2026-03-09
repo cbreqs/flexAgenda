@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Settings, Trash2, Clock, Users, DollarSign, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
 
 export default function ServicesManagement() {
   const { toast } = useToast();
@@ -24,7 +26,7 @@ export default function ServicesManagement() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#F8FAFC]">
+    <div className="flex flex-col min-h-screen bg-background">
       <Navbar />
       
       <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full space-y-8">
@@ -36,8 +38,7 @@ export default function ServicesManagement() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Service Editor Form */}
-          <Card className="lg:col-span-1 border-none shadow-md h-fit sticky top-24">
+          <Card className="lg:col-span-1 border shadow-md h-fit sticky top-24">
             <CardHeader className="bg-primary text-primary-foreground rounded-t-xl">
               <CardTitle className="text-lg">Create New Service</CardTitle>
               <CardDescription className="text-primary-foreground/80">Add a new appointment or event type.</CardDescription>
@@ -45,12 +46,12 @@ export default function ServicesManagement() {
             <CardContent className="pt-6 space-y-4">
               <div className="space-y-2">
                 <Label>Service Name</Label>
-                <Input placeholder="e.g. 1-on-1 Consultation" className="h-10" />
+                <Input placeholder="e.g. 1-on-1 Consultation" className="h-10 bg-muted/50" />
               </div>
               <div className="space-y-2">
                 <Label>Type</Label>
                 <Select defaultValue="appointment">
-                  <SelectTrigger className="h-10">
+                  <SelectTrigger className="h-10 bg-muted/50">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -64,38 +65,37 @@ export default function ServicesManagement() {
                   <Label className="flex items-center gap-2">
                     <Clock className="w-3 h-3" /> Duration (min)
                   </Label>
-                  <Input type="number" defaultValue={60} className="h-10" />
+                  <Input type="number" defaultValue={60} className="h-10 bg-muted/50" />
                 </div>
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2">
                     <Users className="w-3 h-3" /> Max Capacity
                   </Label>
-                  <Input type="number" defaultValue={1} min={1} max={6} className="h-10" />
+                  <Input type="number" defaultValue={1} min={1} max={6} className="h-10 bg-muted/50" />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
                   <DollarSign className="w-3 h-3" /> Price ($)
                 </Label>
-                <Input type="number" defaultValue={0} className="h-10" />
+                <Input type="number" defaultValue={0} className="h-10 bg-muted/50" />
               </div>
               <div className="space-y-2">
                 <Label>Description</Label>
-                <Textarea placeholder="What is this service about?" className="min-h-[100px]" />
+                <Textarea placeholder="What is this service about?" className="min-h-[100px] bg-muted/50" />
               </div>
-              <Button className="w-full h-11 rounded-xl shadow-lg mt-2" onClick={handleAdd}>
+              <Button className="w-full h-11 rounded-xl shadow-lg mt-2 font-bold" onClick={handleAdd}>
                 Create Service
               </Button>
             </CardContent>
           </Card>
 
-          {/* Service List */}
           <div className="lg:col-span-2 space-y-4">
             <h3 className="font-bold text-lg mb-2">Existing Services</h3>
             {services.map((service) => (
-              <Card key={service.id} className="border-none shadow-sm hover:shadow-md transition-all overflow-hidden bg-white">
+              <Card key={service.id} className="border shadow-sm hover:shadow-md transition-all overflow-hidden">
                 <div className="flex flex-col md:flex-row md:items-center p-6 gap-6">
-                  <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center shrink-0">
                     <Settings className="w-8 h-8 text-primary" />
                   </div>
                   <div className="flex-1 space-y-1">
@@ -129,7 +129,6 @@ export default function ServicesManagement() {
               </Card>
             ))}
 
-            {/* AI Recommendation Banner */}
             <div className="p-6 rounded-2xl border-2 border-dashed border-primary/30 bg-primary/5 flex flex-col md:flex-row items-center justify-between gap-6">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center text-accent">

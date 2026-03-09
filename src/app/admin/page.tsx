@@ -28,19 +28,18 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#F8FAFC]">
+    <div className="flex flex-col min-h-screen bg-background">
       <Navbar />
       
       <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full space-y-8">
-        {/* Welcome Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-headline font-bold">Admin Dashboard</h1>
             <p className="text-muted-foreground">Overview of your bookings and services.</p>
           </div>
           <div className="flex gap-3">
-            <Button variant="outline" className="gap-2 bg-white" onClick={() => setIsAiModalOpen(true)}>
-              <Sparkles className="w-4 h-4 text-accent" />
+            <Button variant="outline" className="gap-2" onClick={() => setIsAiModalOpen(true)}>
+              <Sparkles className="w-4 h-4 text-primary" />
               AI Insights
             </Button>
             <Button className="gap-2 rounded-xl" asChild>
@@ -52,10 +51,9 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {stats.map((stat) => (
-            <Card key={stat.name} className="border-none shadow-sm hover:shadow-md transition-all">
+            <Card key={stat.name} className="border shadow-sm hover:shadow-md transition-all">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">{stat.name}</CardTitle>
                 <stat.icon className="w-4 h-4 text-primary" />
@@ -63,7 +61,7 @@ export default function AdminDashboard() {
               <CardContent>
                 <div className="text-2xl font-bold">{stat.value}</div>
                 <div className="flex items-center gap-1 mt-1">
-                  <span className={`text-xs font-medium flex items-center ${stat.trend === 'up' ? 'text-green-600' : 'text-gray-500'}`}>
+                  <span className={`text-xs font-medium flex items-center ${stat.trend === 'up' ? 'text-green-500' : 'text-muted-foreground'}`}>
                     {stat.change} {stat.trend === 'up' && <ArrowUpRight className="w-3 h-3 ml-0.5" />}
                   </span>
                   <span className="text-xs text-muted-foreground">vs last month</span>
@@ -73,14 +71,13 @@ export default function AdminDashboard() {
           ))}
         </div>
 
-        {/* AI Recommendations Section */}
-        <Card className="border-none shadow-md bg-gradient-to-br from-primary/5 to-accent/5 overflow-hidden">
-          <div className="absolute top-0 right-0 p-8 opacity-10">
+        <Card className="border shadow-md bg-gradient-to-br from-primary/10 to-accent/10 overflow-hidden relative">
+          <div className="absolute top-0 right-0 p-8 opacity-5">
             <Sparkles className="w-32 h-32 text-primary" />
           </div>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-accent" />
+              <Sparkles className="w-5 h-5 text-primary" />
               Optimize Your Schedule
             </CardTitle>
             <CardDescription className="max-w-xl">
@@ -94,9 +91,8 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        {/* Quick Lists */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <Card className="border-none shadow-sm h-full bg-white">
+          <Card className="border shadow-sm h-full">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>Recent Bookings</CardTitle>
@@ -111,7 +107,7 @@ export default function AdminDashboard() {
                 {[1, 2, 3].map((i) => (
                   <div key={i} className="flex items-center justify-between group">
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary">
+                      <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center font-bold text-primary">
                         {String.fromCharCode(64 + i)}
                       </div>
                       <div>
@@ -119,14 +115,14 @@ export default function AdminDashboard() {
                         <p className="text-xs text-muted-foreground">Strategy Session • Today, 2:00 PM</p>
                       </div>
                     </div>
-                    <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-100">Confirmed</Badge>
+                    <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">Confirmed</Badge>
                   </div>
                 ))}
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-none shadow-sm h-full bg-white">
+          <Card className="border shadow-sm h-full">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>Active Services</CardTitle>
@@ -145,7 +141,7 @@ export default function AdminDashboard() {
                 ].map((s, idx) => (
                   <div key={idx} className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
+                      <div className="w-10 h-10 rounded-lg bg-accent/20 flex items-center justify-center">
                         <CalendarCheck className="w-5 h-5 text-accent" />
                       </div>
                       <div>

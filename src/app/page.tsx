@@ -13,7 +13,7 @@ export default function Home() {
       
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="relative py-20 px-4 bg-gradient-to-b from-primary/5 to-background">
+        <section className="relative py-20 px-4 bg-gradient-to-b from-primary/10 to-background">
           <div className="max-w-5xl mx-auto text-center">
             <h1 className="text-4xl md:text-6xl font-headline font-extrabold text-foreground mb-6 leading-tight">
               Booking Made <span className="text-primary underline decoration-accent/30">Flexible</span> for Everyone
@@ -22,10 +22,10 @@ export default function Home() {
               Schedule appointments or group events with ease. FlexAgenda adapts to your business needs with custom durations and capacity controls.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
-              <Button size="lg" className="rounded-full px-8 shadow-xl hover:scale-105 transition-transform">
+              <Button size="lg" className="rounded-full px-8 shadow-xl hover:scale-105 transition-transform font-bold">
                 Explore Services
               </Button>
-              <Button size="lg" variant="outline" className="rounded-full px-8 border-primary text-primary" asChild>
+              <Button size="lg" variant="outline" className="rounded-full px-8 border-primary text-primary hover:bg-primary/5" asChild>
                 <Link href="/admin">
                   Go to Dashboard <ArrowRight className="ml-2 w-4 h-4" />
                 </Link>
@@ -35,11 +35,11 @@ export default function Home() {
         </section>
 
         {/* Benefits/Quick Stats */}
-        <section className="py-12 border-y bg-white/50">
+        <section className="py-12 border-y bg-muted/30">
           <div className="max-w-7xl mx-auto px-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="flex items-center gap-4 p-4">
-                <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center text-accent">
+                <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center text-accent">
                   <CalendarDays className="w-6 h-6" />
                 </div>
                 <div>
@@ -48,7 +48,7 @@ export default function Home() {
                 </div>
               </div>
               <div className="flex items-center gap-4 p-4">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-primary">
                   <Users className="w-6 h-6" />
                 </div>
                 <div>
@@ -57,7 +57,7 @@ export default function Home() {
                 </div>
               </div>
               <div className="flex items-center gap-4 p-4">
-                <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center text-accent">
+                <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center text-accent">
                   <Clock className="w-6 h-6" />
                 </div>
                 <div>
@@ -88,10 +88,10 @@ export default function Home() {
         </section>
       </main>
 
-      <footer className="border-t py-12 px-4 bg-muted/20">
+      <footer className="border-t py-12 px-4 bg-muted/10">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded bg-primary flex items-center justify-center text-white font-bold">F</div>
+            <div className="w-8 h-8 rounded bg-primary flex items-center justify-center text-primary-foreground font-bold">F</div>
             <span className="font-bold text-lg">FlexAgenda</span>
           </div>
           <p className="text-sm text-muted-foreground">© 2024 FlexAgenda. All rights reserved.</p>

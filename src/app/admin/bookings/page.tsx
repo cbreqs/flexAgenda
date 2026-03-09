@@ -3,7 +3,7 @@
 
 import { Navbar } from "@/components/layout/Navbar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -19,7 +19,7 @@ const bookings = [
 
 export default function BookingsManagement() {
   return (
-    <div className="flex flex-col min-h-screen bg-[#F8FAFC]">
+    <div className="flex flex-col min-h-screen bg-background">
       <Navbar />
       
       <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full space-y-6">
@@ -28,18 +28,18 @@ export default function BookingsManagement() {
             <h1 className="text-3xl font-headline font-bold">Bookings</h1>
             <p className="text-muted-foreground">Manage and track your customer reservations.</p>
           </div>
-          <Button variant="outline" className="gap-2 bg-white">
+          <Button variant="outline" className="gap-2">
             <Download className="w-4 h-4" />
             Export CSV
           </Button>
         </div>
 
-        <Card className="border-none shadow-sm bg-white">
+        <Card className="border shadow-sm">
           <CardHeader className="border-b">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="relative w-full md:w-96">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input placeholder="Search bookings..." className="pl-10 h-10 rounded-lg" />
+                <Input placeholder="Search bookings..." className="pl-10 h-10 rounded-lg bg-muted/50" />
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" className="rounded-lg h-10 px-4">All Statuses</Button>
