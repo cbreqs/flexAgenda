@@ -17,12 +17,12 @@ interface ServiceCardProps {
 export function ServiceCard({ service }: ServiceCardProps) {
   const [showWizard, setShowWizard] = useState(false);
   
-  // Find the requested image or default to the first one. 
-  // Added extra safety check to prevent "undefined" access.
-  const image = PlaceHolderImages.find(img => img.id === service.imageKey) || PlaceHolderImages[0] || {
-    imageUrl: "https://picsum.photos/seed/placeholder/600/400",
-    imageHint: "placeholder image"
-  };
+  // Robust image lookup with multiple fallbacks
+  const image = (PlaceHolderImages || []).find(img => img.id === service.imageKey) || 
+                (PlaceHolderImages && PlaceHolderImages.length > 0 ? PlaceHolderImages[0] : {
+                  imageUrl: "https://picsum.photos/seed/placeholder/600/400",
+                  imageHint: "placeholder image"
+                });
 
   return (
     <>
@@ -36,7 +36,7 @@ export function ServiceCard({ service }: ServiceCardProps) {
             data-ai-hint={image.imageHint}
           />
           <div className="absolute top-4 right-4">
-            <Badge className="bg-white/90 text-primary hover:bg-white font-semibold">
+            <Badge className="bg-primary text-primary-foreground font-semibold">
               ${service.price}
             </Badge>
           </div>
