@@ -1,0 +1,28 @@
+{
+  "placeholderImages": [
+    {
+      "id": "consultation",
+      "description": "Professional consultation session",
+      "imageUrl": "https://picsum.photos/seed/consult/600/400",
+      "imageHint": "consultation business"
+    },
+    {
+      "id": "workshop",
+      "description": "Group workshop or event",
+      "imageUrl": "https://picsum.photos/seed/workshop/600/400",
+      "imageHint": "workshop meeting"
+    },
+    {
+      "id": "fitness",
+      "description": "Personal training or fitness class",
+      "imageUrl": "https://picsum.photos/seed/fitness/600/400",
+      "imageHint": "fitness training"
+    },
+    {
+      "id": "health",
+      "description": "Healthcare or wellness appointment",
+      "imageUrl": "https://picsum.photos/seed/health/600/400",
+      "imageHint": "wellness healthcare"
+    }
+  ]
+}
