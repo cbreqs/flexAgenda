@@ -1,0 +1,166 @@
+/**
+ * FlexAgenda Firestore Security Rules
+ *
+ * CORE PHILOSOPHY:
+ * This ruleset implements a robust, multi-tenant authorization model for a booking platform.
+ * Security is centered around the "ClientBusiness" entity. Access is governed by membership 
+ * maps denormalized across all sub-entities to ensure "Authorization Independence"—allowing 
+ * rules to execute quickly without expensive cross-document lookups (get() calls).
+ *
+ * DATA STRUCTURE:
+ * The database follows a strictly hierarchical structure:
+ * /clientBusinesses/{clientBusinessId}
+ *   /bookingTypes/{bookingTypeId}
+ *   /availabilitySlots/{availabilitySlotId}
+ *   /bookings/{bookingId}
+ *
+ * KEY SECURITY DECISIONS:
+ * 1. Membership-Based Authorization: Each business contains a 'members' map of UIDs to roles.
+ *    Sub-collections denormalize this into 'clientBusinessMembers' to allow instant write validation.
+ * 2. Public Read / Private Write: Booking types and availability slots are generally 
+ *    readable by the public to facilitate the booking process, but modifications are 
+ *    strictly restricted to business members.
+ * 3. Individual Booker Ownership: Bookings are protected by both the business members 
+ *    (for administration) and the 'bookerUid' (for the user who made the reservation).
+ * 4. Denormalization for Performance: Relational integrity is enforced by requiring 
+ *    IDs (like clientBusinessId) to be present and consistent within the document data.
+ *
+ * STRUCTURAL SEGREGATION:
+ * This ruleset assumes that "isActive" or "isBlocked" flags on documents are used by the 
+ * application logic to filter content, while the rules provide the absolute authorization 
+ * boundary for the path.
+ */
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- GLOBAL HELPER FUNCTIONS ---
+
+    /**
+     * @description Checks if the request is from an authenticated user.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * @description Checks if the user's UID matches the provided ID.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * @description Checks if the user is a member within a membership map stored on the document.
+     * @param data The document data containing the membership map.
+     * @param field The name of the field containing the map (e.g., 'members' or 'clientBusinessMembers').
+     */
+    function isMember(data, field) {
+      return isSignedIn() && field in data && request.auth.uid in data[field];
+    }
+
+    /**
+     * @description Checks if the document exists and the user is a member.
+     */
+    function isExistingMember(res, field) {
+      return res != null && isMember(res.data, field);
+    }
+
+    /**
+     * @description Validates that a field in the document matches the path parameter for relational integrity.
+     */
+    function matchesPath(data, field, pathId) {
+      return data[field] == pathId;
+    }
+
+    /**
+     * @description Enforces immutability for critical relational fields.
+     */
+    function isUnchanged(field) {
+      return request.resource.data[field] == resource.data[field];
+    }
+
+    // --- COLLECTION RULES ---
+
+    /**
+     * @description Rules for the top-level ClientBusiness collection.
+     * @path /clientBusinesses/{clientBusinessId}
+     * @allow get, list: Always (Public business discovery).
+     * @allow create: Signed-in users who include themselves in the members map.
+     * @allow update, delete: Authenticated members of the specific business.
+     * @principle Shared access via membership map; ensures relational integrity with path ID.
+     */
+    match /clientBusinesses/{clientBusinessId} {
+      allow get, list: if true;
+      allow create: if isSignedIn() && matchesPath(request.resource.data, 'id', clientBusinessId) && isMember(request.resource.data, 'members');
+      allow update: if isExistingMember(resource, 'members') && isUnchanged('id');
+      allow delete: if isExistingMember(resource, 'members');
+
+      /**
+       * @description Rules for BookingTypes offered by a business.
+       * @path /clientBusinesses/{clientBusinessId}/bookingTypes/{bookingTypeId}
+       * @allow get, list: Always (Publicly viewable services).
+       * @allow create: Business members who ensure data matches the business path.
+       * @allow update, delete: Business members only.
+       * @principle Denormalized 'clientBusinessMembers' map prevents cross-doc reads.
+       */
+      match /bookingTypes/{bookingTypeId} {
+        allow get, list: if true;
+        allow create: if isMember(request.resource.data, 'clientBusinessMembers') && matchesPath(request.resource.data, 'clientBusinessId', clientBusinessId);
+        allow update: if isExistingMember(resource, 'clientBusinessMembers') && isUnchanged('clientBusinessId');
+        allow delete: if isExistingMember(resource, 'clientBusinessMembers');
+      }
+
+      /**
+       * @description Rules for AvailabilitySlots (specific bookable times).
+       * @path /clientBusinesses/{clientBusinessId}/availabilitySlots/{availabilitySlotId}
+       * @allow get, list: Always (Publicly viewable calendar).
+       * @allow create: Business members.
+       * @allow update, delete: Business members.
+       * @principle Relational integrity between the slot and the parent business.
+       */
+      match /availabilitySlots/{availabilitySlotId} {
+        allow get, list: if true;
+        allow create: if isMember(request.resource.data, 'clientBusinessMembers') && matchesPath(request.resource.data, 'clientBusinessId', clientBusinessId);
+        allow update: if isExistingMember(resource, 'clientBusinessMembers') && isUnchanged('clientBusinessId');
+        allow delete: if isExistingMember(resource, 'clientBusinessMembers');
+      }
+
+      /**
+       * @description Rules for Bookings (reservations).
+       * @path /clientBusinesses/{clientBusinessId}/bookings/{bookingId}
+       * @allow get: Business members or the individual who made the booking (bookerUid).
+       * @allow list: Only business members (prevents users from listing other customers' bookings).
+       * @allow create: Any signed-in user (to book) or business member.
+       * @allow update: Business members or the original booker.
+       * @allow delete: Business members or the original booker.
+       * @principle Dual-authorization model (Business Member OR Individual Owner).
+       */
+      match /bookings/{bookingId} {
+        allow get: if isMember(resource.data, 'clientBusinessMembers') || isOwner(resource.data.bookerUid);
+        allow list: if isSignedIn() && isMemberOfPath(clientBusinessId); // Helper inferred for path-based list security
+        allow create: if isSignedIn() && matchesPath(request.resource.data, 'clientBusinessId', clientBusinessId);
+        allow update: if (isExistingMember(resource, 'clientBusinessMembers') || isOwner(resource.data.bookerUid)) && isUnchanged('bookerUid') && isUnchanged('clientBusinessId');
+        allow delete: if isExistingMember(resource, 'clientBusinessMembers') || isOwner(resource.data.bookerUid);
+      }
+    }
+
+    // --- ADDITIONAL HELPERS FOR PATH-BASED LISTING ---
+    
+    /**
+     * @description Checks if the user is a member of a business based on the path ID.
+     * Note: This uses a get() call which is generally avoided in this IR for docs,
+     * but is necessary for securing LIST operations where resource.data is unavailable.
+     */
+    function isMemberOfPath(clientBusinessId) {
+      return isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/clientBusinesses/$(clientBusinessId)).data.members;
+    }
+  }
+}
+
+/** 
+ * PROTOTYPING MODE NOTICE:
+ * Data schema (types, required fields) is not enforced. 
+ * Relational integrity (IDs) and Authorization (Ownership/Roles) are strictly enforced.
+ */

@@ -1,0 +1,344 @@
+{
+  "entities": {
+    "ClientBusiness": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ClientBusiness",
+      "type": "object",
+      "description": "Represents a business client utilizing the FlexAgenda application to manage their services and bookings.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the ClientBusiness entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The official name of the client business."
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief description of the client business or its services."
+        },
+        "contactEmail": {
+          "type": "string",
+          "description": "The primary contact email for the client business.",
+          "format": "email"
+        },
+        "websiteUrl": {
+          "type": "string",
+          "description": "The official website URL for the client business.",
+          "format": "uri"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "The timestamp when the client business record was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "The timestamp when the client business record was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "contactEmail",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "BookingType": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "BookingType",
+      "type": "object",
+      "description": "Defines a specific type of service or event offered by a ClientBusiness, including its default parameters.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the BookingType entity."
+        },
+        "clientBusinessId": {
+          "type": "string",
+          "description": "Reference to the ClientBusiness offering this booking type. (Relationship: ClientBusiness 1:N BookingType)"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the booking type (e.g., 'Consultation', 'Workshop', 'Yoga Class')."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the service or event provided by this booking type."
+        },
+        "defaultDurationMinutes": {
+          "type": "number",
+          "description": "The default duration of a single slot for this booking type in minutes."
+        },
+        "maxCapacity": {
+          "type": "number",
+          "description": "The maximum number of attendees allowed per booking slot for this type. (Up to 6 as per requirements)"
+        },
+        "isActive": {
+          "type": "boolean",
+          "description": "Indicates if this booking type is currently active and available for booking."
+        },
+        "requiresApproval": {
+          "type": "boolean",
+          "description": "Indicates if bookings for this type require manual approval by the admin."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "The timestamp when the booking type record was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "The timestamp when the booking type record was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "clientBusinessId",
+        "name",
+        "description",
+        "defaultDurationMinutes",
+        "maxCapacity",
+        "isActive",
+        "requiresApproval",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "AvailabilitySlot": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AvailabilitySlot",
+      "type": "object",
+      "description": "Represents a specific, bookable time slot for a particular BookingType offered by a ClientBusiness.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the AvailabilitySlot entity."
+        },
+        "clientBusinessId": {
+          "type": "string",
+          "description": "Reference to the ClientBusiness that owns this availability slot. (Relationship: ClientBusiness 1:N AvailabilitySlot)"
+        },
+        "bookingTypeId": {
+          "type": "string",
+          "description": "Reference to the BookingType associated with this availability slot. (Relationship: BookingType 1:N AvailabilitySlot)"
+        },
+        "startTime": {
+          "type": "string",
+          "description": "The start date and time of the availability slot.",
+          "format": "date-time"
+        },
+        "endTime": {
+          "type": "string",
+          "description": "The end date and time of the availability slot.",
+          "format": "date-time"
+        },
+        "totalCapacity": {
+          "type": "number",
+          "description": "The total number of attendees that can be accommodated in this specific slot. This can override the maxCapacity from BookingType."
+        },
+        "isBlocked": {
+          "type": "boolean",
+          "description": "Indicates if this specific slot has been manually blocked by an admin, making it unavailable for booking."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Optional notes related to this specific availability slot for internal use."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "The timestamp when the availability slot record was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "The timestamp when the availability slot record was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "clientBusinessId",
+        "bookingTypeId",
+        "startTime",
+        "endTime",
+        "totalCapacity",
+        "isBlocked",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Booking": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Booking",
+      "type": "object",
+      "description": "Represents a single reservation made by an end-user for an AvailabilitySlot.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Booking entity."
+        },
+        "availabilitySlotId": {
+          "type": "string",
+          "description": "Reference to the AvailabilitySlot for which this booking was made. (Relationship: AvailabilitySlot 1:N Booking)"
+        },
+        "clientBusinessId": {
+          "type": "string",
+          "description": "Reference to the ClientBusiness that owns the booking, for direct access and filtering. (Relationship: ClientBusiness 1:N Booking)"
+        },
+        "bookingTypeId": {
+          "type": "string",
+          "description": "Reference to the BookingType that was booked, for direct access and filtering. (Relationship: BookingType 1:N Booking)"
+        },
+        "bookerName": {
+          "type": "string",
+          "description": "The full name of the person making the booking."
+        },
+        "bookerEmail": {
+          "type": "string",
+          "description": "The email address of the person making the booking.",
+          "format": "email"
+        },
+        "bookerPhoneNumber": {
+          "type": "string",
+          "description": "The phone number of the person making the booking."
+        },
+        "numberOfAttendees": {
+          "type": "number",
+          "description": "The number of people attending this booking (1 to AvailabilitySlot.totalCapacity)."
+        },
+        "bookingStatus": {
+          "type": "string",
+          "description": "The current status of the booking (e.g., 'pending', 'confirmed', 'cancelled', 'completed')."
+        },
+        "confirmationSent": {
+          "type": "boolean",
+          "description": "Indicates if the booking confirmation email has been sent."
+        },
+        "reminderSent": {
+          "type": "boolean",
+          "description": "Indicates if the reminder email has been sent for this booking."
+        },
+        "adminNotes": {
+          "type": "string",
+          "description": "Optional notes added by an administrator regarding this booking."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "The timestamp when the booking record was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "The timestamp when the booking record was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "availabilitySlotId",
+        "clientBusinessId",
+        "bookingTypeId",
+        "bookerName",
+        "bookerEmail",
+        "numberOfAttendees",
+        "bookingStatus",
+        "confirmationSent",
+        "reminderSent",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/clientBusinesses/{clientBusinessId}",
+        "definition": {
+          "entityName": "ClientBusiness",
+          "schema": {
+            "$ref": "#/backend/entities/ClientBusiness"
+          },
+          "description": "Top-level collection for each business client. This document includes a 'members' map (e.g., `{uid: 'admin'}`) for collaborative authorization within the business, making it authorization-independent for its own access and for denormalizing to subcollections.",
+          "params": [
+            {
+              "name": "clientBusinessId",
+              "description": "The unique identifier for a specific client business."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/clientBusinesses/{clientBusinessId}/bookingTypes/{bookingTypeId}",
+        "definition": {
+          "entityName": "BookingType",
+          "schema": {
+            "$ref": "#/backend/entities/BookingType"
+          },
+          "description": "Subcollection for defining service types offered by a specific business. This entity includes denormalized 'clientBusinessId' from its parent and the 'clientBusinessMembers' map (copied from the parent ClientBusiness's 'members' map) for authorization independence.",
+          "params": [
+            {
+              "name": "clientBusinessId",
+              "description": "The unique identifier for the parent client business."
+            },
+            {
+              "name": "bookingTypeId",
+              "description": "The unique identifier for a specific booking type within the business."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/clientBusinesses/{clientBusinessId}/availabilitySlots/{availabilitySlotId}",
+        "definition": {
+          "entityName": "AvailabilitySlot",
+          "schema": {
+            "$ref": "#/backend/entities/AvailabilitySlot"
+          },
+          "description": "Subcollection for specific bookable time slots for a business and booking type. This entity includes denormalized 'clientBusinessId' and 'bookingTypeId' from its hierarchy, and the 'clientBusinessMembers' map (copied from the ClientBusiness's 'members' map) for authorization independence.",
+          "params": [
+            {
+              "name": "clientBusinessId",
+              "description": "The unique identifier for the parent client business."
+            },
+            {
+              "name": "availabilitySlotId",
+              "description": "The unique identifier for a specific availability slot."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/clientBusinesses/{clientBusinessId}/bookings/{bookingId}",
+        "definition": {
+          "entityName": "Booking",
+          "schema": {
+            "$ref": "#/backend/entities/Booking"
+          },
+          "description": "Subcollection for individual bookings made by users. This entity includes denormalized 'clientBusinessId', 'bookingTypeId', and 'availabilitySlotId' from its hierarchy, the 'clientBusinessMembers' map (copied from the ClientBusiness's 'members' map), and 'bookerUid' (the Firebase UID of the authenticated user who made the booking) for authorization independence.",
+          "params": [
+            {
+              "name": "clientBusinessId",
+              "description": "The unique identifier for the parent client business."
+            },
+            {
+              "name": "bookingId",
+              "description": "The unique identifier for a specific booking."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure for FlexAgenda prioritizes Authorization Independence and Query-Accurate Permissions (QAPs) through a combination of hierarchical path design and strategic denormalization. All core entities are nested under `/clientBusinesses/{clientBusinessId}` to leverage the natural ownership hierarchy and simplify rule writing for business-specific data.\n\n**Authorization Independence (CRITICAL):**\nTo eliminate the need for `get()` calls in security rules, which would break atomic operations and complicate debugging, authorization contexts are denormalized:\n1.  **ClientBusiness Ownership:** Each `ClientBusiness` document will include a `members` map (e.g., `members: { 'user_uid_1': 'admin', 'user_uid_2': 'editor' }`). This map defines which authenticated users have specific roles within that business.\n2.  **Subcollection Authorization:** For `BookingType`, `AvailabilitySlot`, and `Booking` documents, the `members` map from their parent `ClientBusiness` will be denormalized and stored as `clientBusinessMembers` directly within each document. This means any authorization check for admin/editor access on these sub-entities can directly examine `resource.data.clientBusinessMembers` without a cross-document `get()` call.\n3.  **Individual Booking Ownership:** For `Booking` documents, if the booker is an authenticated user, their `uid` will be stored as `bookerUid` within the `Booking` document. This allows the booker to manage their own booking without relying on external lookups, ensuring their access is independent.\n\n**QAPs (Rules are not Filters):**\n1.  **Structural Segregation:** All documents within a given collection path (`/clientBusinesses/{clientBusinessId}/bookingTypes`, `/clientBusinesses/{clientBusinessId}/availabilitySlots`, etc.) share a homogeneous security posture. Publicly viewable data (e.g., active booking types, unblocked availability slots) is controlled by explicit status fields (e.g., `isActive`, `isBlocked`, `bookingStatus`). Security rules can then enforce `read` access based on these fields combined with authentication status (e.g., `allow read: if resource.data.isActive == true || request.auth.uid in resource.data.clientBusinessMembers`). This allows for secure `list` queries where the database itself filters based on the rules, rather than the client fetching too much data and filtering it.\n2.  **Predictable Paths:** The use of descriptive wildcards like `{clientBusinessId}` ensures that queries are directed at specific business contexts, improving security and performance.\n\nThis design ensures robust security rules that are easy to write, debug, and maintain, as all necessary authorization information is present on the document itself or derived from the `request.auth.uid`."
+  }
+}
