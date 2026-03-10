@@ -1,15 +1,15 @@
-
 "use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Calendar, LayoutDashboard, Settings, UserCircle, Menu, Wifi, WifiOff } from "lucide-react";
+import { Calendar, LayoutDashboard, Settings, UserCircle, Menu, Wifi, WifiOff, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { useFirebase } from "@/firebase";
+import { useFirebase, useUser } from "@/firebase";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export function Navbar() {
   const pathname = usePathname();
@@ -17,10 +17,13 @@ export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const { areServicesAvailable } = useFirebase();
+  const { user } = useUser();
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const isConnected = areServicesAvailable && user;
 
   const navItems = isAdmin 
     ? [
@@ -45,19 +48,46 @@ export function Navbar() {
           </Link>
           
           {mounted && (
-            <Badge variant={areServicesAvailable ? "outline" : "destructive"} className="hidden sm:flex items-center gap-1.5 py-0.5 px-2 text-[10px] uppercase font-bold border-primary/20 bg-primary/5">
-              {areServicesAvailable ? (
-                <>
-                  <Wifi className="w-3 h-3 text-green-500" />
-                  <span className="text-green-500">Live</span>
-                </>
-              ) : (
-                <>
-                  <WifiOff className="w-3 h-3 text-destructive" />
-                  <span>Offline</span>
-                </>
-              )}
-            </Badge>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge 
+                    variant={isConnected ? "outline" : "destructive"} 
+                    className={cn(
+                      "hidden sm:flex items-center gap-1.5 py-0.5 px-2 text-[10px] uppercase font-bold border-primary/20 bg-primary/5 cursor-help",
+                      !isConnected && "animate-pulse"
+                    )}
+                  >
+                    {isConnected ? (
+                      <>
+                        <Wifi className="w-3 h-3 text-green-500" />
+                        <span className="text-green-500">Live</span>
+                      </>
+                    ) : (
+                      <>
+                        <WifiOff className="w-3 h-3 text-destructive" />
+                        <span>Setup Required</span>
+                      </>
+                    )}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  {isConnected ? (
+                    <p>Connected to Firebase project: reqs-tech</p>
+                  ) : (
+                    <div className="space-y-2">
+                      <p className="font-bold flex items-center gap-1 text-destructive">
+                        <AlertCircle className="w-3 h-3" />
+                        Action Needed
+                      </p>
+                      <p className="text-xs">
+                        Authentication is not enabled. Go to your Firebase Console and enable <b>Anonymous</b> and <b>Email/Password</b> sign-in providers.
+                      </p>
+                    </div>
+                  )}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
         </div>
 

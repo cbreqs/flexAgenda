@@ -9,9 +9,13 @@ import {
 /** Initiate anonymous sign-in (non-blocking). */
 export function initiateAnonymousSignIn(authInstance: Auth): void {
   // CRITICAL: Call signInAnonymously directly. 
-  // Added .catch to prevent unhandled promise rejections if Auth is disabled in Console.
+  // We handle the 'auth/configuration-not-found' error specifically as it's a common setup step.
   signInAnonymously(authInstance).catch((error) => {
-    console.error("Firebase Anonymous Auth Error:", error.code, error.message);
+    if (error.code === 'auth/configuration-not-found') {
+      console.warn("Firebase Auth is not enabled in the console. Please enable Anonymous Auth at: https://console.firebase.google.com/project/" + authInstance.app.options.projectId + "/authentication");
+    } else {
+      console.error("Firebase Anonymous Auth Error:", error.code, error.message);
+    }
   });
 }
 
