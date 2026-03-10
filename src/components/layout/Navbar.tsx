@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Calendar, LayoutDashboard, Settings, UserCircle, Menu, Wifi, WifiOff } from "lucide-react";
+import { Calendar, LayoutDashboard, Settings, UserCircle, Menu, Wifi, WifiOff, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
@@ -23,9 +23,10 @@ export function Navbar() {
     setMounted(true);
   }, []);
 
-  // Connected if services are initialized and a user (anonymous or otherwise) is present.
   const isConnected = areServicesAvailable && user && !isUserLoading;
-  const projectId = firebaseApp?.options.projectId || "reqs-tech";
+  const config = firebaseApp?.options || {};
+  const projectId = config.projectId || "Not Set";
+  const hasKey = config.apiKey && config.apiKey !== "PASTE_YOUR_API_KEY_HERE";
 
   const navItems = isAdmin 
     ? [
@@ -54,39 +55,46 @@ export function Navbar() {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Badge 
-                    variant={isConnected ? "outline" : "destructive"} 
+                    variant={isConnected && hasKey ? "outline" : "destructive"} 
                     className={cn(
                       "flex items-center gap-1.5 py-0.5 px-2 text-[10px] uppercase font-bold border-primary/20 bg-primary/5 cursor-help",
-                      !isConnected && "animate-pulse"
+                      (!isConnected || !hasKey) && "animate-pulse"
                     )}
                   >
-                    {isConnected ? (
+                    {isConnected && hasKey ? (
                       <>
                         <Wifi className="w-3 h-3 text-green-500" />
                         <span className="text-green-500">Live</span>
                       </>
                     ) : (
                       <>
-                        <WifiOff className="w-3 h-3 text-destructive" />
+                        <ShieldAlert className="w-3 h-3" />
                         <span>Setup Required</span>
                       </>
                     )}
                   </Badge>
                 </TooltipTrigger>
-                <TooltipContent className="max-w-xs">
-                  <div className="space-y-2 p-1">
-                    <p className="font-bold flex items-center gap-1 text-primary">
-                      {isConnected ? "Connection: Successful" : "Action Required"}
-                    </p>
-                    <p className="text-xs">
-                      Connected to Project ID: <code className="bg-muted px-1 rounded">{projectId}</code>
-                    </p>
-                    {!isConnected && (
-                      <div className="text-[10px] space-y-1 mt-2 border-t pt-2">
-                        <p>1. Check that the ID above matches your Console URL.</p>
-                        <p>2. Verify "Anonymous" is Enabled in Auth settings.</p>
-                        <p>3. Ensure your API Key is correct in <code className="bg-muted px-1">config.ts</code>.</p>
+                <TooltipContent className="max-w-xs" side="bottom">
+                  <div className="space-y-3 p-1">
+                    <p className="font-bold text-primary">Connection Debugger</p>
+                    <div className="text-[10px] space-y-2">
+                      <div className="flex justify-between gap-4">
+                        <span className="text-muted-foreground">Project ID:</span>
+                        <code className="bg-muted px-1 rounded">{projectId}</code>
                       </div>
+                      <div className="flex justify-between gap-4">
+                        <span className="text-muted-foreground">API Key Set:</span>
+                        <span className={hasKey ? "text-green-500" : "text-destructive"}>{hasKey ? "Yes" : "No"}</span>
+                      </div>
+                      <div className="flex justify-between gap-4">
+                        <span className="text-muted-foreground">Auth Session:</span>
+                        <span className={user ? "text-green-500" : "text-destructive"}>{user ? "Active" : "Inactive"}</span>
+                      </div>
+                    </div>
+                    {!hasKey && (
+                      <p className="text-[10px] border-t pt-2 text-destructive font-semibold">
+                        Action: Paste your API Key into src/firebase/config.ts
+                      </p>
                     )}
                   </div>
                 </TooltipContent>
@@ -95,7 +103,6 @@ export function Navbar() {
           )}
         </div>
 
-        {/* Desktop Nav */}
         <div className="hidden md:flex items-center gap-6">
           {navItems.map((item) => (
             <Link 
@@ -112,39 +119,32 @@ export function Navbar() {
           ))}
         </div>
 
-        {/* Mobile Nav */}
         <div className="md:hidden">
-          {!mounted ? (
-            <Button variant="ghost" size="icon">
-              <Menu className="w-6 h-6" />
-            </Button>
-          ) : (
-            <Sheet open={isOpen} onOpenChange={setIsOpen}>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Menu className="w-6 h-6" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right">
-                <div className="flex flex-col gap-4 mt-8">
-                  {navItems.map((item) => (
-                    <Link 
-                      key={item.href} 
-                      href={item.href}
-                      onClick={() => setIsOpen(false)}
-                      className={cn(
-                        "flex items-center gap-3 text-lg font-medium p-2 rounded-md",
-                        pathname === item.href ? "bg-primary/10 text-primary" : "text-muted-foreground"
-                      )}
-                    >
-                      <item.icon className="w-5 h-5" />
-                      {item.name}
-                    </Link>
-                  ))}
-                </div>
-              </SheetContent>
-            </Sheet>
-          )}
+          <Sheet open={isOpen} onOpenChange={setIsOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Menu className="w-6 h-6" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right">
+              <div className="flex flex-col gap-4 mt-8">
+                {navItems.map((item) => (
+                  <Link 
+                    key={item.href} 
+                    href={item.href}
+                    onClick={() => setIsOpen(false)}
+                    className={cn(
+                      "flex items-center gap-3 text-lg font-medium p-2 rounded-md",
+                      pathname === item.href ? "bg-primary/10 text-primary" : "text-muted-foreground"
+                    )}
+                  >
+                    <item.icon className="w-5 h-5" />
+                    {item.name}
+                  </Link>
+                ))}
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
     </nav>

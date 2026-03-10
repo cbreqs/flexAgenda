@@ -1,13 +1,12 @@
 /**
  * Firebase configuration for your project.
  * 
- * To connect to your "REQS TECH" project:
- * 1. Go to Project Settings (gear icon) in the Firebase Console.
- * 2. Scroll down to "Your apps".
- * 3. Copy the values for apiKey, projectId, etc., and paste them here.
+ * 1. Go to: https://console.firebase.google.com/project/reqs-tech/settings/general
+ * 2. Scroll to "Your apps" -> "Web apps"
+ * 3. Copy the values and paste them here.
  */
 export const firebaseConfig = {
-  apiKey: "AIzaSyAdIKiCeoh-yjYXHsbhUvgm1aRvAbMo6Gs", // Ensure this matches your console
+  apiKey: "PASTE_YOUR_API_KEY_HERE", 
   authDomain: "reqs-tech.firebaseapp.com",
   projectId: "reqs-tech",
   storageBucket: "reqs-tech.firebasestorage.app",
