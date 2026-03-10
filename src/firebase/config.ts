@@ -5,7 +5,7 @@
  * 3. Replace the placeholder values below.
  */
 export const firebaseConfig = {
-  apiKey: "YOUR_API_KEY_HERE", // <-- PASTE YOUR KEY FROM FIREBASE CONSOLE HERE
+  apiKey: "AIzaSyAdIKiCeoh-yjYXHsbhUvgm1aRvAbMo6Gs",
   authDomain: "reqs-tech.firebaseapp.com",
   projectId: "reqs-tech",
   storageBucket: "reqs-tech.firebasestorage.app",
