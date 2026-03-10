@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Navbar } from "@/components/layout/Navbar";
@@ -11,20 +12,61 @@ import {
   Clock, 
   Plus, 
   Sparkles,
-  ArrowUpRight
+  ArrowUpRight,
+  Loader2
 } from "lucide-react";
 import Link from "next/link";
 import { AiRecommendations } from "@/components/admin/AiRecommendations";
 import { useState } from "react";
+import { useCollection, useMemoFirebase, useFirestore } from '@/firebase';
+import { collection } from 'firebase/firestore';
 
 export default function AdminDashboard() {
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  const firestore = useFirestore();
+
+  const servicesQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'clientBusinesses', 'default-business', 'bookingTypes');
+  }, [firestore]);
+
+  const bookingsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'clientBusinesses', 'default-business', 'bookings');
+  }, [firestore]);
+
+  const { data: services, isLoading: servicesLoading } = useCollection(servicesQuery);
+  const { data: bookings, isLoading: bookingsLoading } = useCollection(bookingsQuery);
 
   const stats = [
-    { name: "Total Bookings", value: "128", icon: CalendarCheck, change: "+12%", trend: "up" },
-    { name: "Total Customers", value: "84", icon: Users, change: "+5%", trend: "up" },
-    { name: "Avg. Fill Rate", value: "72%", icon: TrendingUp, change: "+8%", trend: "up" },
-    { name: "Peak Duration", value: "45m", icon: Clock, change: "0%", trend: "neutral" },
+    { 
+      name: "Total Bookings", 
+      value: bookingsLoading ? "..." : (bookings?.length || 0).toString(), 
+      icon: CalendarCheck, 
+      change: "Real-time", 
+      trend: "neutral" 
+    },
+    { 
+      name: "Active Services", 
+      value: servicesLoading ? "..." : (services?.length || 0).toString(), 
+      icon: Users, 
+      change: "Active", 
+      trend: "neutral" 
+    },
+    { 
+      name: "Fill Rate", 
+      value: "N/A", 
+      icon: TrendingUp, 
+      change: "No data", 
+      trend: "neutral" 
+    },
+    { 
+      name: "Avg Duration", 
+      value: "45m", 
+      icon: Clock, 
+      change: "Default", 
+      trend: "neutral" 
+    },
   ];
 
   return (
@@ -35,7 +77,7 @@ export default function AdminDashboard() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-headline font-bold text-foreground">Admin Dashboard</h1>
-            <p className="text-muted-foreground">Overview of your bookings and services.</p>
+            <p className="text-muted-foreground">Live data from your reqs-tech project.</p>
           </div>
           <div className="flex gap-3">
             <Button variant="outline" className="gap-2 border-primary/20 hover:border-primary/50" onClick={() => setIsAiModalOpen(true)}>
@@ -59,12 +101,13 @@ export default function AdminDashboard() {
                 <stat.icon className="w-4 h-4 text-primary" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-foreground">{stat.value}</div>
+                <div className="text-2xl font-bold text-foreground">
+                  {stat.value === "..." ? <Loader2 className="w-4 h-4 animate-spin" /> : stat.value}
+                </div>
                 <div className="flex items-center gap-1 mt-1">
                   <span className={`text-xs font-medium flex items-center ${stat.trend === 'up' ? 'text-green-500' : 'text-muted-foreground'}`}>
                     {stat.change} {stat.trend === 'up' && <ArrowUpRight className="w-3 h-3 ml-0.5" />}
                   </span>
-                  <span className="text-xs text-muted-foreground">vs last month</span>
                 </div>
               </CardContent>
             </Card>
@@ -81,7 +124,7 @@ export default function AdminDashboard() {
               Optimize Your Schedule
             </CardTitle>
             <CardDescription className="max-w-xl text-muted-foreground">
-              Use AI to analyze your service descriptions and suggest the best slot durations, buffer times, and group capacities for maximum efficiency.
+              Use AI to analyze your service descriptions and suggest the best slot durations, buffer times, and group capacities.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -96,7 +139,7 @@ export default function AdminDashboard() {
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle className="text-foreground">Recent Bookings</CardTitle>
-                <CardDescription className="text-muted-foreground">Latest appointments made by clients.</CardDescription>
+                <CardDescription className="text-muted-foreground">Latest appointments from Firestore.</CardDescription>
               </div>
               <Button variant="link" asChild className="text-primary hover:text-primary/80">
                 <Link href="/admin/bookings">View all</Link>
@@ -104,20 +147,26 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="flex items-center justify-between group">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center font-bold text-primary">
-                        {String.fromCharCode(64 + i)}
+                {bookingsLoading ? (
+                  <div className="flex justify-center py-4"><Loader2 className="w-6 h-6 animate-spin" /></div>
+                ) : bookings && bookings.length > 0 ? (
+                  bookings.slice(0, 5).map((booking: any) => (
+                    <div key={booking.id} className="flex items-center justify-between group">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center font-bold text-primary">
+                          {booking.bookerName?.charAt(0) || "B"}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-foreground">{booking.bookerName}</p>
+                          <p className="text-xs text-muted-foreground">{booking.bookingStatus} • {booking.createdAt ? new Date(booking.createdAt).toLocaleDateString() : 'Just now'}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-semibold text-foreground">Customer {i}</p>
-                        <p className="text-xs text-muted-foreground">Strategy Session • Today, 2:00 PM</p>
-                      </div>
+                      <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20 capitalize">{booking.bookingStatus}</Badge>
                     </div>
-                    <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">Confirmed</Badge>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-4 italic">No recent bookings found.</p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -134,24 +183,28 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                {[
-                  { name: "Strategy Session", users: 1, time: "45m" },
-                  { name: "Group Workshop", users: 6, time: "120m" },
-                  { name: "Quick Consultation", users: 1, time: "15m" },
-                ].map((s, idx) => (
-                  <div key={idx} className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-lg bg-accent/20 flex items-center justify-center">
-                        <CalendarCheck className="w-5 h-5 text-accent" />
+                {servicesLoading ? (
+                  <div className="flex justify-center py-4"><Loader2 className="w-6 h-6 animate-spin" /></div>
+                ) : services && services.length > 0 ? (
+                  services.slice(0, 5).map((service: any) => (
+                    <div key={service.id} className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-lg bg-accent/20 flex items-center justify-center">
+                          <CalendarCheck className="w-5 h-5 text-accent" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-foreground">{service.name}</p>
+                          <p className="text-xs text-muted-foreground">{service.maxCapacity} pax • {service.defaultDurationMinutes}m</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-semibold text-foreground">{s.name}</p>
-                        <p className="text-xs text-muted-foreground">{s.users} max capacity • {s.time}</p>
-                      </div>
+                      <Button variant="ghost" size="sm" asChild className="hover:bg-primary/10 hover:text-primary">
+                        <Link href="/admin/services">Edit</Link>
+                      </Button>
                     </div>
-                    <Button variant="ghost" size="sm" className="hover:bg-primary/10 hover:text-primary">Edit</Button>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-4 italic">No active services. Create your first one!</p>
+                )}
               </div>
             </CardContent>
           </Card>

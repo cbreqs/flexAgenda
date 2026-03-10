@@ -3,17 +3,20 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Calendar, LayoutDashboard, Settings, UserCircle, Menu } from "lucide-react";
+import { Calendar, LayoutDashboard, Settings, UserCircle, Menu, Wifi, WifiOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useFirebase } from "@/firebase";
+import { Badge } from "@/components/ui/badge";
 
 export function Navbar() {
   const pathname = usePathname();
   const isAdmin = pathname.startsWith("/admin");
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const { areServicesAvailable } = useFirebase();
 
   useEffect(() => {
     setMounted(true);
@@ -33,13 +36,29 @@ export function Navbar() {
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 py-3">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
           <Link href="/" className="flex items-center gap-2">
             <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-primary-foreground font-bold text-xl shadow-lg">
               F
             </div>
             <span className="font-headline font-bold text-2xl text-primary tracking-tight">FlexAgenda</span>
           </Link>
+          
+          {mounted && (
+            <Badge variant={areServicesAvailable ? "outline" : "destructive"} className="hidden sm:flex items-center gap-1.5 py-0.5 px-2 text-[10px] uppercase font-bold border-primary/20 bg-primary/5">
+              {areServicesAvailable ? (
+                <>
+                  <Wifi className="w-3 h-3 text-green-500" />
+                  <span className="text-green-500">Live</span>
+                </>
+              ) : (
+                <>
+                  <WifiOff className="w-3 h-3 text-destructive" />
+                  <span>Offline</span>
+                </>
+              )}
+            </Badge>
+          )}
         </div>
 
         {/* Desktop Nav */}
