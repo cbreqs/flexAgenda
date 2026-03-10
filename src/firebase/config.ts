@@ -1,8 +1,9 @@
 /**
- * Firebase configuration for reqs-tech project.
- * 1. Go to Firebase Console > Project Settings.
- * 2. Scroll to "Your apps" and copy the config object.
- * 3. Replace the placeholder values below.
+ * Firebase configuration for your project.
+ * 
+ * 1. In your Firebase Console (REQS TECH), go to Project Settings (gear icon).
+ * 2. Under "Your apps", click the "</>" icon to create a Web App.
+ * 3. Copy the entire config object and paste it below.
  */
 export const firebaseConfig = {
   apiKey: "AIzaSyAdIKiCeoh-yjYXHsbhUvgm1aRvAbMo6Gs",

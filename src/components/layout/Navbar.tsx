@@ -73,28 +73,21 @@ export function Navbar() {
                   </Badge>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs">
-                  {isConnected ? (
-                    <p>Connected to project: {projectId}</p>
-                  ) : (
-                    <div className="space-y-2">
-                      <p className="font-bold flex items-center gap-1 text-destructive">
-                        <AlertCircle className="w-3 h-3" />
-                        Action Needed
-                      </p>
+                  <div className="space-y-2">
+                    <p className="font-bold flex items-center gap-1 text-primary">
+                      {isConnected ? "Connection Status: Active" : "Action Required"}
+                    </p>
+                    <p className="text-xs">
+                      The app is trying to connect to project ID: <code className="bg-muted px-1 rounded">{projectId}</code>
+                    </p>
+                    {!isConnected && (
                       <p className="text-xs">
-                        Authentication service is not active. Go to your Firebase Console and enable <b>Anonymous</b> sign-in:
-                        <br />
-                        <a 
-                          href={`https://console.firebase.google.com/project/${projectId}/authentication/providers`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="underline text-primary font-bold block mt-1"
-                        >
-                          Enable Auth Now →
-                        </a>
+                        1. Click <b>"Get started"</b> in your Firebase Console.<br />
+                        2. Enable <b>Anonymous</b> sign-in.<br />
+                        3. Verify the Project ID in your browser URL matches the one above.
                       </p>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -116,9 +109,6 @@ export function Navbar() {
               {item.name}
             </Link>
           ))}
-          <Button variant="outline" className="ml-4 border-primary text-primary hover:bg-primary/5">
-            Support
-          </Button>
         </div>
 
         {/* Mobile Nav */}
