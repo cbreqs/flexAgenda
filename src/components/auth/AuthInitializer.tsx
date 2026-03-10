@@ -12,8 +12,17 @@ export function AuthInitializer() {
   const { user, isUserLoading } = useUser();
 
   useEffect(() => {
-    // Only attempt sign-in if we have a valid auth instance (requires API Key)
-    if (!isUserLoading && !user && auth && auth.config.apiKey !== "YOUR_API_KEY_HERE") {
+    // Only attempt sign-in if we have a valid auth instance and an actual API key is present
+    const apiKey = auth?.app?.options?.apiKey;
+    
+    if (
+      !isUserLoading && 
+      !user && 
+      auth && 
+      apiKey && 
+      apiKey !== "YOUR_API_KEY_HERE" &&
+      !apiKey.startsWith("AIzaSyAdIKiCeoh") // Check if it's still the placeholder/default
+    ) {
       initiateAnonymousSignIn(auth);
     }
   }, [user, isUserLoading, auth]);
