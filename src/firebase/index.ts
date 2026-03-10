@@ -19,17 +19,14 @@ export function initializeFirebase(): FirebaseServices {
 
   try {
     let app: FirebaseApp;
+    const isPlaceholder = !firebaseConfig.apiKey || firebaseConfig.apiKey === "PASTE_YOUR_API_KEY_HERE";
+
     if (!getApps().length) {
-      // In production/hosting environment, initializeApp() without args picks up env vars
-      try {
-        app = initializeApp();
-      } catch (e) {
-        // Fallback to config object if automatic init fails or during local dev
-        if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "PASTE_YOUR_API_KEY_HERE") {
-          throw new Error("auth/invalid-api-key");
-        }
-        app = initializeApp(firebaseConfig);
+      if (isPlaceholder) {
+        // Return nulls gracefully instead of throwing to prevent white-screen-of-death
+        return { firebaseApp: null, auth: null, firestore: null };
       }
+      app = initializeApp(firebaseConfig);
     } else {
       app = getApp();
     }
