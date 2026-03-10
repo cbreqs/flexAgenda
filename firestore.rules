@@ -1,73 +1,12 @@
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // --- GLOBAL HELPER FUNCTIONS ---
-
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    function isMember(data, field) {
-      return isSignedIn() && field in data && request.auth.uid in data[field];
-    }
-
-    function isExistingMember(res, field) {
-      return res != null && isMember(res.data, field);
-    }
-
-    function matchesPath(data, field, pathId) {
-      return data[field] == pathId;
-    }
-
-    function isUnchanged(field) {
-      return request.resource.data[field] == resource.data[field];
-    }
-
-    // --- COLLECTION RULES ---
-
-    match /clientBusinesses/{clientBusinessId} {
-      // Allow public discovery of businesses
-      allow get, list: if true;
-      
-      // Prototyping: Allow anyone to create a business for now
-      allow create: if isSignedIn() && matchesPath(request.resource.data, 'id', clientBusinessId);
-      
-      // Strict updates for members only
-      allow update: if isExistingMember(resource, 'members') && isUnchanged('id');
-      allow delete: if isExistingMember(resource, 'members');
-
-      match /bookingTypes/{bookingTypeId} {
-        // Services are public
-        allow get, list: if true;
-        
-        // Only members can manage services
-        // Prototyping: Allow if members field is missing or user is in it
-        allow create: if isSignedIn() && matchesPath(request.resource.data, 'clientBusinessId', clientBusinessId);
-        allow update, delete: if isSignedIn(); 
-      }
-
-      match /availabilitySlots/{availabilitySlotId} {
-        allow get, list: if true;
-        allow create: if isSignedIn();
-        allow update, delete: if isSignedIn();
-      }
-
-      match /bookings/{bookingId} {
-        // Users can see their own bookings; members can see all
-        allow get: if isSignedIn();
-        
-        // Prototyping: Allow authenticated users to list bookings in this path
-        allow list: if isSignedIn();
-        
-        allow create: if isSignedIn() && matchesPath(request.resource.data, 'clientBusinessId', clientBusinessId);
-        allow update, delete: if isSignedIn();
-      }
+    // --- PROTOTYPING RULES ---
+    // These rules allow anyone to read and write to the database.
+    // In a production app, you would restrict this to authenticated users.
+    
+    match /{document=**} {
+      allow read, write: if true;
     }
   }
 }

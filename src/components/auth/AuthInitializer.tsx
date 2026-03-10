@@ -1,9 +1,7 @@
-
 "use client";
 
 import { useEffect } from "react";
-import { useAuth, initiateAnonymousSignIn } from "@/firebase";
-import { useUser } from "@/firebase";
+import { useAuth, initiateAnonymousSignIn, useUser } from "@/firebase";
 
 /**
  * AuthInitializer ensures that every visitor has a Firebase identity.
@@ -14,7 +12,8 @@ export function AuthInitializer() {
   const { user, isUserLoading } = useUser();
 
   useEffect(() => {
-    if (!isUserLoading && !user && auth) {
+    // Only attempt sign-in if we have a valid auth instance (requires API Key)
+    if (!isUserLoading && !user && auth && auth.config.apiKey !== "YOUR_API_KEY_HERE") {
       initiateAnonymousSignIn(auth);
     }
   }, [user, isUserLoading, auth]);

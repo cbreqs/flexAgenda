@@ -1,11 +1,11 @@
-
 /**
  * Firebase configuration for reqs-tech project.
- * IMPORTANT: Replace the placeholder values below with the actual config
- * from your Firebase Console (Project Settings > General > Your apps).
+ * 1. Go to Firebase Console > Project Settings.
+ * 2. Scroll to "Your apps" and copy the config object.
+ * 3. Replace the placeholder values below.
  */
 export const firebaseConfig = {
-  apiKey: "YOUR_API_KEY_HERE",
+  apiKey: "YOUR_API_KEY_HERE", // <-- PASTE YOUR KEY FROM FIREBASE CONSOLE HERE
   authDomain: "reqs-tech.firebaseapp.com",
   projectId: "reqs-tech",
   storageBucket: "reqs-tech.firebasestorage.app",
