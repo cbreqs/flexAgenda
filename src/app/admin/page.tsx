@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Navbar } from "@/components/layout/Navbar";
@@ -27,6 +26,7 @@ export default function AdminDashboard() {
 
   const servicesQuery = useMemoFirebase(() => {
     if (!firestore) return null;
+    // Using a consistent business ID 'default-business' for the prototype
     return collection(firestore, 'clientBusinesses', 'default-business', 'bookingTypes');
   }, [firestore]);
 
@@ -77,7 +77,7 @@ export default function AdminDashboard() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-headline font-bold text-foreground">Admin Dashboard</h1>
-            <p className="text-muted-foreground">Live data from your reqs-tech project.</p>
+            <p className="text-muted-foreground">Manage your business operations in real-time.</p>
           </div>
           <div className="flex gap-3">
             <Button variant="outline" className="gap-2 border-primary/20 hover:border-primary/50" onClick={() => setIsAiModalOpen(true)}>
@@ -139,7 +139,7 @@ export default function AdminDashboard() {
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle className="text-foreground">Recent Bookings</CardTitle>
-                <CardDescription className="text-muted-foreground">Latest appointments from Firestore.</CardDescription>
+                <CardDescription className="text-muted-foreground">Latest appointments from your project.</CardDescription>
               </div>
               <Button variant="link" asChild className="text-primary hover:text-primary/80">
                 <Link href="/admin/bookings">View all</Link>
@@ -165,7 +165,7 @@ export default function AdminDashboard() {
                     </div>
                   ))
                 ) : (
-                  <p className="text-sm text-muted-foreground text-center py-4 italic">No recent bookings found.</p>
+                  <p className="text-sm text-muted-foreground text-center py-4 italic">No recent bookings found. They will appear here once customers start booking.</p>
                 )}
               </div>
             </CardContent>
@@ -190,7 +190,7 @@ export default function AdminDashboard() {
                     <div key={service.id} className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 rounded-lg bg-accent/20 flex items-center justify-center">
-                          <CalendarCheck className="w-5 h-5 text-accent" />
+                          <Clock className="w-5 h-5 text-accent" />
                         </div>
                         <div>
                           <p className="font-semibold text-foreground">{service.name}</p>
@@ -203,7 +203,7 @@ export default function AdminDashboard() {
                     </div>
                   ))
                 ) : (
-                  <p className="text-sm text-muted-foreground text-center py-4 italic">No active services. Create your first one!</p>
+                  <p className="text-sm text-muted-foreground text-center py-4 italic">No active services. Go to the Services tab to create your first one!</p>
                 )}
               </div>
             </CardContent>

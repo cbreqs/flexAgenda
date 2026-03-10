@@ -2,11 +2,16 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     // --- PROTOTYPING RULES ---
-    // These rules allow anyone to read and write to the database.
-    // In a production app, you would restrict this to authenticated users.
+    // These rules allow any authenticated user (including anonymous) to read and write.
+    // This is ideal for development and prototyping.
     
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if request.auth != null;
+    }
+    
+    // Fallback for public read-only access if needed for landing pages
+    match /clientBusinesses/{businessId}/bookingTypes/{typeId} {
+      allow read: if true;
     }
   }
 }

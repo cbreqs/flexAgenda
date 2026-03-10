@@ -9,14 +9,15 @@ import { useCollection, useMemoFirebase, useFirestore } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 
 export default function Home() {
-  const { firestore } = useFirestore() ? { firestore: useFirestore() } : { firestore: null };
+  const firestore = useFirestore();
 
   const servicesQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    // For MVP, we're assuming a default business ID or fetching all active services across a common path
-    // For this prototype, we'll look in a top-level collection if IDs aren't yet known, 
-    // or use a placeholder 'default-business'
-    return query(collection(firestore, 'clientBusinesses', 'default-business', 'bookingTypes'), where('isActive', '==', true));
+    // Querying active services for the default business
+    return query(
+      collection(firestore, 'clientBusinesses', 'default-business', 'bookingTypes'), 
+      where('isActive', '==', true)
+    );
   }, [firestore]);
 
   const { data: services, isLoading } = useCollection(servicesQuery);
@@ -105,7 +106,7 @@ export default function Home() {
               </div>
             ) : (
               <div className="text-center py-20 border rounded-2xl bg-muted/20">
-                <p className="text-muted-foreground">No active services found. Check back later!</p>
+                <p className="text-muted-foreground">No active services found yet. If you are the admin, go to the dashboard to create your first service!</p>
               </div>
             )}
           </div>
