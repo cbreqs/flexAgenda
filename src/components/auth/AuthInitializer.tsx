@@ -12,7 +12,9 @@ export function AuthInitializer() {
   const { user, isUserLoading } = useUser();
 
   useEffect(() => {
-    // Only attempt sign-in if we have a valid auth instance and an actual API key is present
+    // Attempt sign-in if core services are ready and an API key is present.
+    // We've removed the restrictive prefix check to allow sign-in attempts
+    // as soon as a project is targeted.
     const apiKey = auth?.app?.options?.apiKey;
     
     if (
@@ -20,9 +22,9 @@ export function AuthInitializer() {
       !user && 
       auth && 
       apiKey && 
-      apiKey !== "YOUR_API_KEY_HERE" &&
-      !apiKey.startsWith("AIzaSyAdIKiCeoh") // Check if it's still the placeholder/default
+      apiKey !== "YOUR_API_KEY_HERE"
     ) {
+      console.log("AuthInitializer: Initiating anonymous sign-in...");
       initiateAnonymousSignIn(auth);
     }
   }, [user, isUserLoading, auth]);
