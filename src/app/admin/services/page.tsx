@@ -42,12 +42,12 @@ export default function ServicesManagement() {
       type: newServiceType,
       defaultDurationMinutes: newServiceDuration,
       maxCapacity: newServiceCapacity,
-      price: newServicePrice, // Added for UI completeness though not in strictly required schema
+      price: newServicePrice,
       description: newServiceDescription,
       isActive: true,
       requiresApproval: false,
       clientBusinessId: 'default-business',
-      clientBusinessMembers: { 'placeholder-uid': 'admin' }, // Placeholder for security rules compatibility
+      clientBusinessMembers: { 'placeholder-uid': 'admin' }, 
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -56,7 +56,6 @@ export default function ServicesManagement() {
     
     toast({ title: "Service Created", description: "Your new service is now live." });
     
-    // Reset form
     setNewServiceName("");
     setNewServiceDescription("");
   };
@@ -206,23 +205,6 @@ export default function ServicesManagement() {
             ) : (
               <p className="text-center py-10 text-muted-foreground border-2 border-dashed rounded-2xl">No services configured yet.</p>
             )}
-
-            <div className="p-6 rounded-2xl border-2 border-dashed border-primary/30 bg-primary/5 flex flex-col md:flex-row items-center justify-between gap-6">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center text-accent">
-                  <Sparkles className="w-6 h-6" />
-                </div>
-                <div>
-                  <h4 className="font-bold">Not sure about parameters?</h4>
-                  <p className="text-sm text-muted-foreground">Let our AI help you optimize your service flow.</p>
-                </div>
-              </div>
-              <Button variant="outline" className="rounded-xl border-accent text-accent hover:bg-accent/10 whitespace-nowrap" asChild>
-                <Link href="/admin">
-                  Get AI Advice
-                </Link>
-              </Button>
-            </div>
           </div>
         </div>
       </main>
