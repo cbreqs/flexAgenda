@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Calendar, LayoutDashboard, Settings, UserCircle, Menu, Wifi, WifiOff, AlertCircle } from "lucide-react";
+import { Calendar, LayoutDashboard, Settings, UserCircle, Menu, Wifi, WifiOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
@@ -17,13 +17,14 @@ export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const { areServicesAvailable, firebaseApp } = useFirebase();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const isConnected = areServicesAvailable && user;
+  // Connected if services are initialized and a user (anonymous or otherwise) is present.
+  const isConnected = areServicesAvailable && user && !isUserLoading;
   const projectId = firebaseApp?.options.projectId || "reqs-tech";
 
   const navItems = isAdmin 
@@ -55,7 +56,7 @@ export function Navbar() {
                   <Badge 
                     variant={isConnected ? "outline" : "destructive"} 
                     className={cn(
-                      "hidden sm:flex items-center gap-1.5 py-0.5 px-2 text-[10px] uppercase font-bold border-primary/20 bg-primary/5 cursor-help",
+                      "flex items-center gap-1.5 py-0.5 px-2 text-[10px] uppercase font-bold border-primary/20 bg-primary/5 cursor-help",
                       !isConnected && "animate-pulse"
                     )}
                   >
@@ -73,19 +74,19 @@ export function Navbar() {
                   </Badge>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs">
-                  <div className="space-y-2">
+                  <div className="space-y-2 p-1">
                     <p className="font-bold flex items-center gap-1 text-primary">
-                      {isConnected ? "Connection Status: Active" : "Action Required"}
+                      {isConnected ? "Connection: Successful" : "Action Required"}
                     </p>
                     <p className="text-xs">
-                      The app is trying to connect to project ID: <code className="bg-muted px-1 rounded">{projectId}</code>
+                      Connected to Project ID: <code className="bg-muted px-1 rounded">{projectId}</code>
                     </p>
                     {!isConnected && (
-                      <p className="text-xs">
-                        1. Click <b>"Get started"</b> in your Firebase Console.<br />
-                        2. Enable <b>Anonymous</b> sign-in.<br />
-                        3. Verify the Project ID in your browser URL matches the one above.
-                      </p>
+                      <div className="text-[10px] space-y-1 mt-2 border-t pt-2">
+                        <p>1. Check that the ID above matches your Console URL.</p>
+                        <p>2. Verify "Anonymous" is Enabled in Auth settings.</p>
+                        <p>3. Ensure your API Key is correct in <code className="bg-muted px-1">config.ts</code>.</p>
+                      </div>
                     )}
                   </div>
                 </TooltipContent>

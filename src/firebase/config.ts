@@ -1,9 +1,10 @@
 /**
  * Firebase configuration for your project.
  * 
- * 1. In your Firebase Console (REQS TECH), go to Project Settings (gear icon).
- * 2. Under "Your apps", click the "</>" icon to create a Web App.
- * 3. Copy the entire config object and paste it below.
+ * IMPORTANT: To connect to your "REQS TECH" project:
+ * 1. Go to Project Settings (gear icon) in the Firebase Console.
+ * 2. Scroll down to "Your apps".
+ * 3. Copy the values for apiKey, projectId, etc., and paste them here.
  */
 export const firebaseConfig = {
   apiKey: "AIzaSyAdIKiCeoh-yjYXHsbhUvgm1aRvAbMo6Gs",
