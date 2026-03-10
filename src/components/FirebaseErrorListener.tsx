@@ -22,6 +22,9 @@ export function FirebaseErrorListener() {
           message: "Firebase configuration is missing or invalid. Please add your API Key to src/firebase/config.ts." 
         });
       }
+    } else {
+      // Clear configuration errors once services are available
+      setError(null);
     }
   }, [areServicesAvailable, firebaseApp]);
 
@@ -66,9 +69,9 @@ export function FirebaseErrorListener() {
               >
                 1. Open Firebase Console Settings <ExternalLink className="w-4 h-4" />
               </a>
-              <p>2. Copy your <strong>API Key</strong> and paste it into <strong>src/firebase/config.ts</strong>.</p>
-              <p>3. Go to <strong>Firestore Database</strong> and click <strong>Create Database</strong>.</p>
-              <p className="text-xs italic opacity-80 mt-2">The app will automatically refresh and turn "Live" once these steps are completed.</p>
+              <p>2. Verify Project ID &quot;reqs-tech&quot; matches your URL.</p>
+              <p>3. Go to Firestore Database and click &quot;Create Database&quot;.</p>
+              <p className="text-xs italic opacity-80 mt-2">The app will automatically refresh and turn &quot;Live&quot; once these steps are completed.</p>
             </div>
           </AlertDescription>
         </div>

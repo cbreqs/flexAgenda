@@ -3,16 +3,18 @@
 import React, { useMemo, type ReactNode } from 'react';
 import { FirebaseProvider } from '@/firebase/provider';
 import { initializeFirebase } from '@/firebase';
+import { firebaseConfig } from '@/firebase/config';
 
 interface FirebaseClientProviderProps {
   children: ReactNode;
 }
 
 export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
-  // Use a simple state to avoid re-initializing on every render
+  // Added dependencies to useMemo so that changes to config.ts 
+  // trigger a re-initialization of Firebase services.
   const services = useMemo(() => {
     return initializeFirebase();
-  }, []);
+  }, [firebaseConfig.apiKey, firebaseConfig.projectId]);
 
   return (
     <FirebaseProvider
