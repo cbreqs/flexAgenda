@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { X, ExternalLink, ShieldAlert } from "lucide-react";
+import { X, ExternalLink, ShieldAlert, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFirebase } from '@/firebase';
 
@@ -30,7 +30,7 @@ export function FirebaseErrorListener() {
   useEffect(() => {
     const handleError = (permissionError: FirestorePermissionError) => {
       setError({
-        message: "Firestore Permission Denied. This usually means the 'reqs-tech' database hasn't been created yet or rules haven't synced.",
+        message: "Firestore Permission Denied. This almost always means the database hasn't been created yet in the console.",
         path: permissionError.request.path
       });
     };
@@ -53,8 +53,8 @@ export function FirebaseErrorListener() {
             <p>{error.message}</p>
             
             {error.path && (
-              <p className="font-mono bg-black/20 p-2 rounded text-[10px] break-all">
-                Resource: {error.path}
+              <p className="font-mono bg-black/20 p-2 rounded text-[10px] break-all flex items-center gap-2">
+                <Database className="w-3 h-3" /> {error.path}
               </p>
             )}
             
@@ -65,12 +65,12 @@ export function FirebaseErrorListener() {
                   href="https://console.firebase.google.com/project/reqs-tech/firestore" 
                   target="_blank" 
                   rel="noreferrer"
-                  className="flex items-center gap-2 font-bold hover:text-white group"
+                  className="flex items-center gap-2 font-bold hover:text-white group bg-white/10 p-2 rounded-md"
                 >
-                  1. Open Firestore &rarr; Click &quot;Create Database&quot; <ExternalLink className="w-3 h-3 group-hover:scale-110 transition-transform" />
+                  1. Open Firestore {'->'} Click "Create Database" <ExternalLink className="w-3 h-3 group-hover:scale-110 transition-transform" />
                 </a>
-                <p>2. Verify URL contains &quot;/project/reqs-tech/&quot;</p>
-                <p>3. Enable &quot;Anonymous Auth&quot; in the Auth tab.</p>
+                <p>2. Verify URL contains "/project/reqs-tech/"</p>
+                <p>3. Ensure "Anonymous Auth" is enabled in the Auth tab.</p>
               </div>
             </div>
           </AlertDescription>
