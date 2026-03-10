@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Navbar } from "@/components/layout/Navbar";
@@ -14,6 +15,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { useCollection, useMemoFirebase, useFirestore, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
+import { generateServiceDescription } from "@/ai/flows/ai-service-description-generator";
 
 export default function ServicesManagement() {
   const { toast } = useToast();
@@ -25,6 +27,7 @@ export default function ServicesManagement() {
   const [newServiceCapacity, setNewServiceCapacity] = useState(1);
   const [newServicePrice, setNewServicePrice] = useState(0);
   const [newServiceDescription, setNewServiceDescription] = useState("");
+  const [isAiGenerating, setIsAiGenerating] = useState(false);
 
   const servicesQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -32,6 +35,23 @@ export default function ServicesManagement() {
   }, [firestore]);
 
   const { data: services, isLoading } = useCollection(servicesQuery);
+
+  const handleAiGenerate = async () => {
+    if (!newServiceName) {
+      toast({ title: "Name Required", description: "Enter a service name first so the AI knows what to write about.", variant: "destructive" });
+      return;
+    }
+    setIsAiGenerating(true);
+    try {
+      const { description } = await generateServiceDescription({ serviceInput: newServiceName });
+      setNewServiceDescription(description);
+      toast({ title: "AI Generation Complete", description: "Description updated!" });
+    } catch (err) {
+      toast({ title: "AI Error", description: "Failed to generate description. Please try again.", variant: "destructive" });
+    } finally {
+      setIsAiGenerating(false);
+    }
+  };
 
   const handleAdd = () => {
     if (!firestore || !newServiceName) return;
@@ -145,7 +165,19 @@ export default function ServicesManagement() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Description</Label>
+                <div className="flex justify-between items-center">
+                  <Label>Description</Label>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-7 text-[10px] gap-1 text-primary hover:text-primary hover:bg-primary/10"
+                    onClick={handleAiGenerate}
+                    disabled={isAiGenerating}
+                  >
+                    {isAiGenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                    AI Generate
+                  </Button>
+                </div>
                 <Textarea 
                   placeholder="What is this service about?" 
                   className="min-h-[100px] bg-muted/20" 
@@ -194,9 +226,6 @@ export default function ServicesManagement() {
                     <div className="flex gap-2">
                       <Button variant="ghost" size="icon" className="hover:bg-destructive/10 text-muted-foreground hover:text-destructive" onClick={() => handleDelete(service.id)}>
                         <Trash2 className="w-4 h-4" />
-                      </Button>
-                      <Button variant="outline" className="rounded-lg">
-                        Configure Slots
                       </Button>
                     </div>
                   </div>

@@ -11,7 +11,9 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { CheckCircle2, ChevronRight, ChevronLeft, Calendar as CalendarIcon, Clock, User } from "lucide-react";
+import { CheckCircle2, ChevronRight, ChevronLeft, Calendar as CalendarIcon, Clock, User, Loader2 } from "lucide-react";
+import { useFirestore, addDocumentNonBlocking } from "@/firebase";
+import { collection } from "firebase/firestore";
 
 interface BookingWizardProps {
   open: boolean;
@@ -24,37 +26,71 @@ export function BookingWizard({ open, onOpenChange, service }: BookingWizardProp
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [time, setTime] = useState<string>("");
   const [attendees, setAttendees] = useState(1);
-  const [customer, setCustomer] = useState({ name: "", email: "" });
+  const [customer, setCustomer] = useState({ name: "", email: "", phone: "" });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
   const { toast } = useToast();
+  const firestore = useFirestore();
 
   const handleNext = () => setStep(step + 1);
   const handleBack = () => setStep(step - 1);
 
-  const handleSubmit = () => {
-    // Mocking a successful booking
-    toast({
-      title: "Booking Confirmed!",
-      description: `You're all set for ${service.name} on ${date ? format(date, 'PPP') : ''} at ${time}.`,
-    });
-    setStep(4); // Success step
+  const handleSubmit = async () => {
+    if (!firestore) return;
+
+    setIsSubmitting(true);
+    try {
+      const bookingsCol = collection(firestore, 'clientBusinesses', 'default-business', 'bookings');
+      
+      const newBooking = {
+        bookingTypeId: service.id,
+        clientBusinessId: 'default-business',
+        bookerName: customer.name,
+        bookerEmail: customer.email,
+        bookerPhoneNumber: customer.phone,
+        numberOfAttendees: attendees,
+        bookingStatus: 'confirmed',
+        confirmationSent: true,
+        reminderSent: false,
+        startTime: date ? `${format(date, 'yyyy-MM-dd')}T${time}:00` : new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        clientBusinessMembers: { 'placeholder-uid': 'admin' }
+      };
+
+      await addDocumentNonBlocking(bookingsCol, newBooking);
+      
+      toast({
+        title: "Booking Confirmed!",
+        description: `You're all set for ${service.name} on ${date ? format(date, 'PPP') : ''} at ${time}.`,
+      });
+      setStep(4);
+    } catch (error) {
+      toast({
+        title: "Booking Failed",
+        description: "There was an error saving your booking. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleClose = () => {
     onOpenChange(false);
     setTimeout(() => {
       setStep(1);
-      setCustomer({ name: "", email: "" });
+      setCustomer({ name: "", email: "", phone: "" });
       setTime("");
     }, 300);
   };
 
-  const timeSlots = ["09:00 AM", "10:30 AM", "01:00 PM", "02:30 PM", "04:00 PM"];
+  const timeSlots = ["09:00", "10:30", "13:00", "14:30", "16:00"];
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-xl p-0 overflow-hidden rounded-2xl border-none">
         <div className="flex flex-col h-full max-h-[90vh]">
-          {/* Progress Bar */}
           <div className="h-1.5 w-full bg-muted flex">
             {[1, 2, 3].map((s) => (
               <div 
@@ -139,6 +175,16 @@ export function BookingWizard({ open, onOpenChange, service }: BookingWizardProp
                     />
                   </div>
                   <div className="space-y-2">
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <Input 
+                      id="phone" 
+                      placeholder="+1 (555) 000-0000" 
+                      className="h-11"
+                      value={customer.phone}
+                      onChange={(e) => setCustomer({...customer, phone: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-2">
                     <Label>Number of Attendees</Label>
                     <div className="grid grid-cols-6 gap-2">
                       {[1, 2, 3, 4, 5, 6].map((num) => (
@@ -154,9 +200,6 @@ export function BookingWizard({ open, onOpenChange, service }: BookingWizardProp
                         </Button>
                       ))}
                     </div>
-                    {service.maxCapacity < 6 && (
-                      <p className="text-xs text-muted-foreground">This service has a max capacity of {service.maxCapacity}.</p>
-                    )}
                   </div>
                 </div>
               </div>
@@ -174,7 +217,7 @@ export function BookingWizard({ open, onOpenChange, service }: BookingWizardProp
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                         <Clock className="w-4 h-4" />
-                        {time} ({service.durationMinutes} mins)
+                        {time}
                       </div>
                     </div>
                     <div className="text-right">
@@ -191,9 +234,6 @@ export function BookingWizard({ open, onOpenChange, service }: BookingWizardProp
                     </div>
                   </div>
                 </div>
-                <p className="text-xs text-center text-muted-foreground">
-                  By clicking "Confirm Booking", you agree to our terms of service and cancellation policy.
-                </p>
               </div>
             )}
 
@@ -233,7 +273,12 @@ export function BookingWizard({ open, onOpenChange, service }: BookingWizardProp
                   Continue <ChevronRight className="w-4 h-4" />
                 </Button>
               ) : (
-                <Button onClick={handleSubmit} className="px-10 rounded-xl bg-accent hover:bg-accent/90 shadow-xl">
+                <Button 
+                  onClick={handleSubmit} 
+                  disabled={isSubmitting}
+                  className="px-10 rounded-xl bg-accent hover:bg-accent/90 shadow-xl gap-2"
+                >
+                  {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
                   Confirm Booking
                 </Button>
               )}

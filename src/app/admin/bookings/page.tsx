@@ -7,17 +7,24 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search, Calendar, MoreHorizontal, Mail, Phone, Download } from "lucide-react";
+import { Search, Calendar, MoreHorizontal, Mail, Phone, Download, Loader2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-
-const bookings = [
-  { id: "BK001", customer: "Alice Johnson", service: "Strategy Session", date: "2024-03-25", time: "02:00 PM", status: "confirmed", people: 1 },
-  { id: "BK002", customer: "Bob Smith", service: "Design Workshop", date: "2024-03-26", time: "10:30 AM", status: "pending", people: 4 },
-  { id: "BK003", customer: "Charlie Brown", service: "Wellness Assessment", date: "2024-03-27", time: "01:00 PM", status: "cancelled", people: 2 },
-  { id: "BK004", customer: "Diana Prince", service: "Strategy Session", date: "2024-03-28", time: "04:00 PM", status: "confirmed", people: 1 },
-];
+import { useCollection, useMemoFirebase, useFirestore } from '@/firebase';
+import { collection, query, orderBy } from 'firebase/firestore';
 
 export default function BookingsManagement() {
+  const firestore = useFirestore();
+
+  const bookingsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(
+      collection(firestore, 'clientBusinesses', 'default-business', 'bookings'),
+      orderBy('createdAt', 'desc')
+    );
+  }, [firestore]);
+
+  const { data: bookings, isLoading } = useCollection(bookingsQuery);
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Navbar />
@@ -41,83 +48,88 @@ export default function BookingsManagement() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input placeholder="Search bookings..." className="pl-10 h-10 rounded-lg bg-muted/50" />
               </div>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="rounded-lg h-10 px-4">All Statuses</Button>
-                <Button variant="outline" size="sm" className="rounded-lg h-10 px-4">This Month</Button>
-              </div>
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="w-[100px]">ID</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Service</TableHead>
-                  <TableHead>Schedule</TableHead>
-                  <TableHead>Group</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {bookings.map((booking) => (
-                  <TableRow key={booking.id} className="group transition-colors">
-                    <TableCell className="font-medium text-muted-foreground">{booking.id}</TableCell>
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span className="font-semibold">{booking.customer}</span>
-                        <span className="text-xs text-muted-foreground">customer@example.com</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>{booking.service}</TableCell>
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span className="font-medium">{booking.date}</span>
-                        <span className="text-xs text-muted-foreground">{booking.time}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="gap-1 font-medium">
-                        {booking.people} pax
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge 
-                        variant={booking.status === 'confirmed' ? 'default' : booking.status === 'cancelled' ? 'destructive' : 'secondary'}
-                        className="capitalize"
-                      >
-                        {booking.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="hover:bg-muted">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48">
-                          <DropdownMenuItem className="gap-2">
-                            <Mail className="w-4 h-4" /> Email Customer
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="gap-2">
-                            <Phone className="w-4 h-4" /> Call Customer
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="gap-2">
-                            <Calendar className="w-4 h-4" /> Reschedule
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="gap-2 text-destructive">
-                            Cancel Booking
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+            {isLoading ? (
+              <div className="flex justify-center items-center py-20">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              </div>
+            ) : bookings && bookings.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Service ID</TableHead>
+                    <TableHead>Schedule</TableHead>
+                    <TableHead>Attendees</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {bookings.map((booking: any) => (
+                    <TableRow key={booking.id} className="group transition-colors">
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-semibold">{booking.bookerName}</span>
+                          <span className="text-xs text-muted-foreground">{booking.bookerEmail}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-mono text-xs text-muted-foreground uppercase">{booking.bookingTypeId.slice(0, 8)}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-medium">
+                            {booking.startTime ? new Date(booking.startTime).toLocaleDateString() : 'N/A'}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                             {booking.startTime ? new Date(booking.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="gap-1 font-medium">
+                          {booking.numberOfAttendees} pax
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant={booking.bookingStatus === 'confirmed' ? 'default' : booking.bookingStatus === 'cancelled' ? 'destructive' : 'secondary'}
+                          className="capitalize"
+                        >
+                          {booking.bookingStatus}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="hover:bg-muted">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuItem className="gap-2">
+                              <Mail className="w-4 h-4" /> Email Customer
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="gap-2">
+                              <Phone className="w-4 h-4" /> Call Customer
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="gap-2 text-destructive">
+                              Cancel Booking
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <div className="py-20 text-center text-muted-foreground italic">
+                No bookings found yet.
+              </div>
+            )}
           </CardContent>
         </Card>
       </main>
