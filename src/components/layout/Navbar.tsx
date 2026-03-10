@@ -16,7 +16,7 @@ export function Navbar() {
   const isAdmin = pathname.startsWith("/admin");
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const { areServicesAvailable } = useFirebase();
+  const { areServicesAvailable, firebaseApp } = useFirebase();
   const { user } = useUser();
 
   useEffect(() => {
@@ -24,6 +24,7 @@ export function Navbar() {
   }, []);
 
   const isConnected = areServicesAvailable && user;
+  const projectId = firebaseApp?.options.projectId || "reqs-tech";
 
   const navItems = isAdmin 
     ? [
@@ -73,7 +74,7 @@ export function Navbar() {
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs">
                   {isConnected ? (
-                    <p>Connected to Firebase project: reqs-tech</p>
+                    <p>Connected to project: {projectId}</p>
                   ) : (
                     <div className="space-y-2">
                       <p className="font-bold flex items-center gap-1 text-destructive">
@@ -81,7 +82,16 @@ export function Navbar() {
                         Action Needed
                       </p>
                       <p className="text-xs">
-                        Authentication is not enabled. Go to your Firebase Console and enable <b>Anonymous</b> and <b>Email/Password</b> sign-in providers.
+                        Authentication service is not active. Go to your Firebase Console and enable <b>Anonymous</b> sign-in:
+                        <br />
+                        <a 
+                          href={`https://console.firebase.google.com/project/${projectId}/authentication/providers`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline text-primary font-bold block mt-1"
+                        >
+                          Enable Auth Now →
+                        </a>
                       </p>
                     </div>
                   )}
