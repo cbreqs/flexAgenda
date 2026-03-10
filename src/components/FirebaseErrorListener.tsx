@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, X, ExternalLink, ShieldAlert } from "lucide-react";
+import { X, ExternalLink, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFirebase } from '@/firebase';
 
@@ -19,11 +19,10 @@ export function FirebaseErrorListener() {
       
       if (!hasKey) {
         setError({ 
-          message: "Firebase configuration is missing or invalid. Please add your API Key to src/firebase/config.ts." 
+          message: "Firebase configuration is missing or invalid. Please ensure your API Key is correctly pasted in src/firebase/config.ts." 
         });
       }
     } else {
-      // Clear configuration errors once services are available
       setError(null);
     }
   }, [areServicesAvailable, firebaseApp]);
@@ -31,7 +30,7 @@ export function FirebaseErrorListener() {
   useEffect(() => {
     const handleError = (permissionError: FirestorePermissionError) => {
       setError({
-        message: "Permission denied. Ensure your Firestore Database is created and rules are set to public for prototyping.",
+        message: "Firestore Permission Denied. This usually means the 'reqs-tech' database hasn't been created yet or rules haven't synced.",
         path: permissionError.request.path
       });
     };
@@ -49,29 +48,30 @@ export function FirebaseErrorListener() {
       <Alert variant="destructive" className="shadow-2xl bg-destructive text-destructive-foreground border-none p-6">
         <ShieldAlert className="h-6 w-6 mt-1" />
         <div className="flex-1 ml-4">
-          <AlertTitle className="text-lg font-bold">Firebase Connection Issue</AlertTitle>
+          <AlertTitle className="text-lg font-bold uppercase tracking-tight">Backend Sync Required</AlertTitle>
           <AlertDescription className="mt-3 space-y-4 text-sm opacity-90 leading-relaxed">
             <p>{error.message}</p>
             
             {error.path && (
-              <p className="font-mono bg-black/20 p-2 rounded text-xs break-all">
-                Path: {error.path}
+              <p className="font-mono bg-black/20 p-2 rounded text-[10px] break-all">
+                Resource: {error.path}
               </p>
             )}
             
-            <div className="space-y-2 pt-2">
-              <p className="font-bold border-b border-white/20 pb-1 mb-2">How to fix this:</p>
-              <a 
-                href="https://console.firebase.google.com/project/reqs-tech/settings/general" 
-                target="_blank" 
-                rel="noreferrer"
-                className="flex items-center gap-2 underline font-bold hover:text-white"
-              >
-                1. Open Firebase Console Settings <ExternalLink className="w-4 h-4" />
-              </a>
-              <p>2. Verify Project ID &quot;reqs-tech&quot; matches your URL.</p>
-              <p>3. Go to Firestore Database and click &quot;Create Database&quot;.</p>
-              <p className="text-xs italic opacity-80 mt-2">The app will automatically refresh and turn &quot;Live&quot; once these steps are completed.</p>
+            <div className="space-y-3 pt-2 border-t border-white/20">
+              <p className="font-bold underline underline-offset-4">Console Checklist:</p>
+              <div className="space-y-2">
+                <a 
+                  href="https://console.firebase.google.com/project/reqs-tech/firestore" 
+                  target="_blank" 
+                  rel="noreferrer"
+                  className="flex items-center gap-2 font-bold hover:text-white group"
+                >
+                  1. Open Firestore &rarr; Click &quot;Create Database&quot; <ExternalLink className="w-3 h-3 group-hover:scale-110 transition-transform" />
+                </a>
+                <p>2. Verify URL contains &quot;/project/reqs-tech/&quot;</p>
+                <p>3. Enable &quot;Anonymous Auth&quot; in the Auth tab.</p>
+              </div>
             </div>
           </AlertDescription>
         </div>
