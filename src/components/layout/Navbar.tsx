@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Calendar, LayoutDashboard, Settings, UserCircle, Menu, Wifi, WifiOff, ShieldAlert, ChevronDown, Building2 } from "lucide-react";
+import { Calendar, LayoutDashboard, Settings, UserCircle, Menu, Wifi, ShieldAlert, ChevronDown, Building2, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
@@ -63,24 +63,35 @@ export function Navbar() {
           {mounted && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-9 px-3 gap-2 border border-border/50 bg-muted/30">
-                  <Building2 className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-xs font-semibold">{currentBusinessName}</span>
+                <Button variant="ghost" className="h-9 px-3 gap-2 border border-border/50 bg-muted/30 hover:bg-muted/50 transition-all">
+                  <Building2 className="w-4 h-4 text-primary" />
+                  <span className="text-xs font-bold truncate max-w-[120px]">{currentBusinessName}</span>
                   <ChevronDown className="w-3 h-3 text-muted-foreground" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-56">
-                <DropdownMenuLabel>Switch Business</DropdownMenuLabel>
+              <DropdownMenuContent align="start" className="w-64 p-2">
+                <DropdownMenuLabel className="text-xs text-muted-foreground uppercase font-bold px-2 py-1.5">Switch Client Business</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {mockBusinesses.map((biz) => (
                   <DropdownMenuItem 
                     key={biz.id} 
                     onClick={() => setCurrentBusinessId(biz.id)}
-                    className={cn(currentBusinessId === biz.id && "bg-accent font-bold")}
+                    className={cn(
+                      "flex items-center gap-2 rounded-lg cursor-pointer px-3 py-2 my-1 transition-colors",
+                      currentBusinessId === biz.id ? "bg-primary text-primary-foreground font-bold" : "hover:bg-accent"
+                    )}
                   >
+                    <Briefcase className={cn("w-4 h-4", currentBusinessId === biz.id ? "text-primary-foreground" : "text-muted-foreground")} />
                     {biz.name}
                   </DropdownMenuItem>
                 ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/admin/businesses" className="flex items-center gap-2 text-primary font-semibold hover:bg-primary/5 rounded-lg w-full">
+                    <Settings className="w-4 h-4" />
+                    Manage All Businesses
+                  </Link>
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           )}
