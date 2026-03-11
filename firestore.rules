@@ -3,7 +3,6 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // --- OPEN PROTOTYPING RULES ---
     // Allow anyone to read and write while we get the project connected.
-    // This ensures that as soon as the database is created, the app can sync.
     match /{document=**} {
       allow read, write: if true;
     }
