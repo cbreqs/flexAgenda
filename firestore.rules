@@ -1,8 +1,7 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // --- OPEN PROTOTYPING RULES ---
-    // Allow anyone to read and write while we get the project connected.
+    // Allow read/write access to all documents during prototyping
     match /{document=**} {
       allow read, write: if true;
     }

@@ -30,7 +30,7 @@ export function FirebaseErrorListener() {
   useEffect(() => {
     const handleError = (permissionError: FirestorePermissionError) => {
       setError({
-        message: "Firestore Permission Denied. This almost always means the database hasn't been created yet in the console.",
+        message: "Firestore Permission Denied. This usually means the database hasn't been created yet or the rules need adjustment.",
         path: permissionError.request.path
       });
     };
@@ -67,10 +67,10 @@ export function FirebaseErrorListener() {
                   rel="noreferrer"
                   className="flex items-center gap-2 font-bold hover:text-white group bg-white/10 p-2 rounded-md"
                 >
-                  1. Open Firestore {'->'} Click "Create Database" <ExternalLink className="w-3 h-3 group-hover:scale-110 transition-transform" />
+                  1. Open Firestore &rarr; Click &quot;Create Database&quot; <ExternalLink className="w-3 h-3 group-hover:scale-110 transition-transform" />
                 </a>
-                <p>2. Verify URL contains "/project/reqs-tech/"</p>
-                <p>3. Ensure "Anonymous Auth" is enabled in the Auth tab.</p>
+                <p>2. Verify URL contains &quot;/project/reqs-tech/&quot;</p>
+                <p>3. Ensure &quot;Anonymous Auth&quot; is enabled in the Auth tab.</p>
               </div>
             </div>
           </AlertDescription>
