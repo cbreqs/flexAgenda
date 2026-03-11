@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Navbar } from "@/components/layout/Navbar";
@@ -13,13 +12,14 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { useCollection, useMemoFirebase, useFirestore, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { useCollection, useMemoFirebase, useFirestore, addDocumentNonBlocking, deleteDocumentNonBlocking, useCurrentBusiness } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { generateServiceDescription } from "@/ai/flows/ai-service-description-generator";
 
 export default function ServicesManagement() {
   const { toast } = useToast();
   const firestore = useFirestore();
+  const { currentBusinessId } = useCurrentBusiness();
   
   const [newServiceName, setNewServiceName] = useState("");
   const [newServiceType, setNewServiceType] = useState("appointment");
@@ -31,8 +31,8 @@ export default function ServicesManagement() {
 
   const servicesQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return collection(firestore, 'clientBusinesses', 'default-business', 'bookingTypes');
-  }, [firestore]);
+    return collection(firestore, 'clientBusinesses', currentBusinessId, 'bookingTypes');
+  }, [firestore, currentBusinessId]);
 
   const { data: services, isLoading } = useCollection(servicesQuery);
 
@@ -56,7 +56,7 @@ export default function ServicesManagement() {
   const handleAdd = () => {
     if (!firestore || !newServiceName) return;
 
-    const colRef = collection(firestore, 'clientBusinesses', 'default-business', 'bookingTypes');
+    const colRef = collection(firestore, 'clientBusinesses', currentBusinessId, 'bookingTypes');
     const newService = {
       name: newServiceName,
       type: newServiceType,
@@ -66,7 +66,7 @@ export default function ServicesManagement() {
       description: newServiceDescription,
       isActive: true,
       requiresApproval: false,
-      clientBusinessId: 'default-business',
+      clientBusinessId: currentBusinessId,
       clientBusinessMembers: { 'placeholder-uid': 'admin' }, 
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -74,7 +74,7 @@ export default function ServicesManagement() {
 
     addDocumentNonBlocking(colRef, newService);
     
-    toast({ title: "Service Created", description: "Your new service is now live." });
+    toast({ title: "Service Created", description: `Service added to ${currentBusinessId}.` });
     
     setNewServiceName("");
     setNewServiceDescription("");
@@ -82,7 +82,7 @@ export default function ServicesManagement() {
 
   const handleDelete = (id: string) => {
     if (!firestore) return;
-    const docRef = doc(firestore, 'clientBusinesses', 'default-business', 'bookingTypes', id);
+    const docRef = doc(firestore, 'clientBusinesses', currentBusinessId, 'bookingTypes', id);
     deleteDocumentNonBlocking(docRef);
     toast({ title: "Service Deleted", description: "The service has been removed." });
   };
@@ -95,7 +95,7 @@ export default function ServicesManagement() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-headline font-bold">Services</h1>
-            <p className="text-muted-foreground">Configure your booking types and parameters.</p>
+            <p className="text-muted-foreground">Configure booking types for <span className="font-bold text-primary">{currentBusinessId}</span>.</p>
           </div>
         </div>
 
@@ -192,7 +192,7 @@ export default function ServicesManagement() {
           </Card>
 
           <div className="lg:col-span-2 space-y-4">
-            <h3 className="font-bold text-lg mb-2">Existing Services</h3>
+            <h3 className="font-bold text-lg mb-2">Existing Services for {currentBusinessId}</h3>
             {isLoading ? (
               <div className="flex justify-center py-10">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -232,7 +232,7 @@ export default function ServicesManagement() {
                 </Card>
               ))
             ) : (
-              <p className="text-center py-10 text-muted-foreground border-2 border-dashed rounded-2xl">No services configured yet.</p>
+              <p className="text-center py-10 text-muted-foreground border-2 border-dashed rounded-2xl">No services configured yet for this business.</p>
             )}
           </div>
         </div>

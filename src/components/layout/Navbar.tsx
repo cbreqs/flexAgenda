@@ -2,14 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Calendar, LayoutDashboard, Settings, UserCircle, Menu, Wifi, WifiOff, ShieldAlert } from "lucide-react";
+import { Calendar, LayoutDashboard, Settings, UserCircle, Menu, Wifi, WifiOff, ShieldAlert, ChevronDown, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { useFirebase, useUser } from "@/firebase";
+import { useFirebase, useUser, useCurrentBusiness } from "@/firebase";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 export function Navbar() {
   const pathname = usePathname();
@@ -18,6 +19,7 @@ export function Navbar() {
   const [mounted, setMounted] = useState(false);
   const { areServicesAvailable, firebaseApp } = useFirebase();
   const { user, isUserLoading } = useUser();
+  const { currentBusinessId, setCurrentBusinessId } = useCurrentBusiness();
 
   useEffect(() => {
     setMounted(true);
@@ -39,6 +41,14 @@ export function Navbar() {
         { name: "Admin Portal", href: "/admin", icon: UserCircle },
       ];
 
+  const mockBusinesses = [
+    { id: 'default-business', name: 'Main Clinic' },
+    { id: 'yoga-studio', name: 'Zen Yoga' },
+    { id: 'tech-consult', name: 'Code Wizards' }
+  ];
+
+  const currentBusinessName = mockBusinesses.find(b => b.id === currentBusinessId)?.name || currentBusinessId;
+
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 py-3">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -47,9 +57,34 @@ export function Navbar() {
             <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-primary-foreground font-bold text-xl shadow-lg">
               F
             </div>
-            <span className="font-headline font-bold text-2xl text-primary tracking-tight">FlexAgenda</span>
+            <span className="font-headline font-bold text-2xl text-primary tracking-tight hidden sm:inline-block">FlexAgenda</span>
           </Link>
           
+          {mounted && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-9 px-3 gap-2 border border-border/50 bg-muted/30">
+                  <Building2 className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-xs font-semibold">{currentBusinessName}</span>
+                  <ChevronDown className="w-3 h-3 text-muted-foreground" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56">
+                <DropdownMenuLabel>Switch Business</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {mockBusinesses.map((biz) => (
+                  <DropdownMenuItem 
+                    key={biz.id} 
+                    onClick={() => setCurrentBusinessId(biz.id)}
+                    className={cn(currentBusinessId === biz.id && "bg-accent font-bold")}
+                  >
+                    {biz.name}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+
           {mounted && (
             <TooltipProvider>
               <Tooltip>
@@ -57,7 +92,7 @@ export function Navbar() {
                   <Badge 
                     variant={isConnected && hasKey ? "outline" : "destructive"} 
                     className={cn(
-                      "flex items-center gap-1.5 py-0.5 px-2 text-[10px] uppercase font-bold border-primary/20 bg-primary/5 cursor-help",
+                      "hidden md:flex items-center gap-1.5 py-0.5 px-2 text-[10px] uppercase font-bold border-primary/20 bg-primary/5 cursor-help",
                       (!isConnected || !hasKey) && "animate-pulse"
                     )}
                   >
@@ -91,11 +126,6 @@ export function Navbar() {
                         <span className={user ? "text-green-500" : "text-destructive"}>{user ? "Active" : "Inactive"}</span>
                       </div>
                     </div>
-                    {!hasKey && (
-                      <p className="text-[10px] border-t pt-2 text-destructive font-semibold">
-                        Action: Paste your API Key into src/firebase/config.ts
-                      </p>
-                    )}
                   </div>
                 </TooltipContent>
               </Tooltip>

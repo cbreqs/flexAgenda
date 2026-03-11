@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Navbar } from "@/components/layout/Navbar";
@@ -9,19 +8,20 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Search, Calendar, MoreHorizontal, Mail, Phone, Download, Loader2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { useCollection, useMemoFirebase, useFirestore } from '@/firebase';
+import { useCollection, useMemoFirebase, useFirestore, useCurrentBusiness } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 
 export default function BookingsManagement() {
   const firestore = useFirestore();
+  const { currentBusinessId } = useCurrentBusiness();
 
   const bookingsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(
-      collection(firestore, 'clientBusinesses', 'default-business', 'bookings'),
+      collection(firestore, 'clientBusinesses', currentBusinessId, 'bookings'),
       orderBy('createdAt', 'desc')
     );
-  }, [firestore]);
+  }, [firestore, currentBusinessId]);
 
   const { data: bookings, isLoading } = useCollection(bookingsQuery);
 
@@ -33,7 +33,7 @@ export default function BookingsManagement() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-headline font-bold">Bookings</h1>
-            <p className="text-muted-foreground">Manage and track your customer reservations.</p>
+            <p className="text-muted-foreground">Manage track reservations for <span className="font-bold text-primary">{currentBusinessId}</span>.</p>
           </div>
           <Button variant="outline" className="gap-2">
             <Download className="w-4 h-4" />
@@ -76,7 +76,9 @@ export default function BookingsManagement() {
                           <span className="text-xs text-muted-foreground">{booking.bookerEmail}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="font-mono text-xs text-muted-foreground uppercase">{booking.bookingTypeId.slice(0, 8)}</TableCell>
+                      <TableCell className="font-mono text-xs text-muted-foreground uppercase">
+                        {booking.bookingTypeId?.slice(0, 8) || 'N/A'}
+                      </TableCell>
                       <TableCell>
                         <div className="flex flex-col">
                           <span className="font-medium">
@@ -127,7 +129,7 @@ export default function BookingsManagement() {
               </Table>
             ) : (
               <div className="py-20 text-center text-muted-foreground italic">
-                No bookings found yet.
+                No bookings found for this business yet.
               </div>
             )}
           </CardContent>

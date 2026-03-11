@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -12,7 +11,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { CheckCircle2, ChevronRight, ChevronLeft, Calendar as CalendarIcon, Clock, User, Loader2 } from "lucide-react";
-import { useFirestore, addDocumentNonBlocking } from "@/firebase";
+import { useFirestore, addDocumentNonBlocking, useCurrentBusiness } from "@/firebase";
 import { collection } from "firebase/firestore";
 
 interface BookingWizardProps {
@@ -31,6 +30,7 @@ export function BookingWizard({ open, onOpenChange, service }: BookingWizardProp
   
   const { toast } = useToast();
   const firestore = useFirestore();
+  const { currentBusinessId } = useCurrentBusiness();
 
   const handleNext = () => setStep(step + 1);
   const handleBack = () => setStep(step - 1);
@@ -40,11 +40,11 @@ export function BookingWizard({ open, onOpenChange, service }: BookingWizardProp
 
     setIsSubmitting(true);
     try {
-      const bookingsCol = collection(firestore, 'clientBusinesses', 'default-business', 'bookings');
+      const bookingsCol = collection(firestore, 'clientBusinesses', currentBusinessId, 'bookings');
       
       const newBooking = {
         bookingTypeId: service.id,
-        clientBusinessId: 'default-business',
+        clientBusinessId: currentBusinessId,
         bookerName: customer.name,
         bookerEmail: customer.email,
         bookerPhoneNumber: customer.phone,
@@ -62,13 +62,13 @@ export function BookingWizard({ open, onOpenChange, service }: BookingWizardProp
       
       toast({
         title: "Booking Confirmed!",
-        description: `You're all set for ${service.name} on ${date ? format(date, 'PPP') : ''} at ${time}.`,
+        description: `You're all set for ${service.name} at ${currentBusinessId}.`,
       });
       setStep(4);
     } catch (error) {
       toast({
         title: "Booking Failed",
-        description: "There was an error saving your booking. Please try again.",
+        description: "There was an error saving your booking.",
         variant: "destructive"
       });
     } finally {

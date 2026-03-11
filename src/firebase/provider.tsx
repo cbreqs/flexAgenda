@@ -27,6 +27,8 @@ export interface FirebaseContextState {
   user: User | null;
   isUserLoading: boolean;
   userError: Error | null;
+  currentBusinessId: string;
+  setCurrentBusinessId: (id: string) => void;
 }
 
 export const FirebaseContext = createContext<FirebaseContextState | undefined>(undefined);
@@ -37,6 +39,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   firestore,
   auth,
 }) => {
+  const [currentBusinessId, setCurrentBusinessId] = useState<string>('default-business');
   const [userAuthState, setUserAuthState] = useState<UserAuthState>({
     user: null,
     isUserLoading: true,
@@ -70,8 +73,10 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       user: userAuthState.user,
       isUserLoading: userAuthState.isUserLoading,
       userError: userAuthState.userError,
+      currentBusinessId,
+      setCurrentBusinessId,
     };
-  }, [firebaseApp, firestore, auth, userAuthState]);
+  }, [firebaseApp, firestore, auth, userAuthState, currentBusinessId]);
 
   return (
     <FirebaseContext.Provider value={contextValue}>
@@ -95,6 +100,10 @@ export const useFirebaseApp = () => useFirebase().firebaseApp;
 export const useUser = () => {
   const { user, isUserLoading, userError } = useFirebase();
   return { user, isUserLoading, userError };
+};
+export const useCurrentBusiness = () => {
+  const { currentBusinessId, setCurrentBusinessId } = useFirebase();
+  return { currentBusinessId, setCurrentBusinessId };
 };
 
 export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T & {__memo?: boolean} {
