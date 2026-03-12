@@ -60,9 +60,9 @@ export default function ServicesManagement() {
     const newService = {
       name: newServiceName,
       type: newServiceType,
-      defaultDurationMinutes: newServiceDuration,
-      maxCapacity: newServiceCapacity,
-      price: newServicePrice,
+      defaultDurationMinutes: newServiceDuration || 0,
+      maxCapacity: newServiceCapacity || 1,
+      price: newServicePrice || 0,
       description: newServiceDescription,
       isActive: true,
       requiresApproval: false,
@@ -78,6 +78,9 @@ export default function ServicesManagement() {
     
     setNewServiceName("");
     setNewServiceDescription("");
+    setNewServiceDuration(45);
+    setNewServiceCapacity(1);
+    setNewServicePrice(0);
   };
 
   const handleDelete = (id: string) => {
@@ -136,7 +139,10 @@ export default function ServicesManagement() {
                     type="number" 
                     value={newServiceDuration} 
                     className="h-10 bg-muted/20"
-                    onChange={(e) => setNewServiceDuration(parseInt(e.target.value))}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value);
+                      setNewServiceDuration(isNaN(val) ? 0 : val);
+                    }}
                   />
                 </div>
                 <div className="space-y-2">
@@ -149,7 +155,10 @@ export default function ServicesManagement() {
                     min={1} 
                     max={6} 
                     className="h-10 bg-muted/20"
-                    onChange={(e) => setNewServiceCapacity(parseInt(e.target.value))}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value);
+                      setNewServiceCapacity(isNaN(val) ? 1 : val);
+                    }}
                   />
                 </div>
               </div>
@@ -161,7 +170,10 @@ export default function ServicesManagement() {
                   type="number" 
                   value={newServicePrice} 
                   className="h-10 bg-muted/20"
-                  onChange={(e) => setNewServicePrice(parseInt(e.target.value))}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value);
+                    setNewServicePrice(isNaN(val) ? 0 : val);
+                  }}
                 />
               </div>
               <div className="space-y-2">

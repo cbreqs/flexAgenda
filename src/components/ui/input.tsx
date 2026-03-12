@@ -4,6 +4,9 @@ import { cn } from "@/lib/utils"
 
 const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
   ({ className, type, ...props }, ref) => {
+    // Prevent React warning when a number input's value becomes NaN
+    const safeValue = typeof props.value === 'number' && isNaN(props.value) ? '' : props.value;
+
     return (
       <input
         type={type}
@@ -13,6 +16,7 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
         )}
         ref={ref}
         {...props}
+        value={safeValue}
       />
     )
   }
