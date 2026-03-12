@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Navbar } from "@/components/layout/Navbar";
@@ -30,7 +31,7 @@ export default function ServicesManagement() {
   const [isAiGenerating, setIsAiGenerating] = useState(false);
 
   const servicesQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !currentBusinessId) return null;
     return collection(firestore, 'clientBusinesses', currentBusinessId, 'bookingTypes');
   }, [firestore, currentBusinessId]);
 
@@ -54,7 +55,7 @@ export default function ServicesManagement() {
   };
 
   const handleAdd = () => {
-    if (!firestore || !newServiceName) return;
+    if (!firestore || !newServiceName || !currentBusinessId) return;
 
     const colRef = collection(firestore, 'clientBusinesses', currentBusinessId, 'bookingTypes');
     const newService = {
@@ -84,7 +85,7 @@ export default function ServicesManagement() {
   };
 
   const handleDelete = (id: string) => {
-    if (!firestore) return;
+    if (!firestore || !currentBusinessId) return;
     const docRef = doc(firestore, 'clientBusinesses', currentBusinessId, 'bookingTypes', id);
     deleteDocumentNonBlocking(docRef);
     toast({ title: "Service Deleted", description: "The service has been removed." });
@@ -98,7 +99,7 @@ export default function ServicesManagement() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-headline font-bold">Services</h1>
-            <p className="text-muted-foreground">Configure booking types for <span className="font-bold text-primary">{currentBusinessId}</span>.</p>
+            <p className="text-muted-foreground">Configure booking types for <span className="font-bold text-primary">{currentBusinessId || 'No Business Selected'}</span>.</p>
           </div>
         </div>
 
@@ -116,11 +117,12 @@ export default function ServicesManagement() {
                   className="h-10 bg-muted/20" 
                   value={newServiceName}
                   onChange={(e) => setNewServiceName(e.target.value)}
+                  disabled={!currentBusinessId}
                 />
               </div>
               <div className="space-y-2">
                 <Label>Type</Label>
-                <Select value={newServiceType} onValueChange={setNewServiceType}>
+                <Select value={newServiceType} onValueChange={setNewServiceType} disabled={!currentBusinessId}>
                   <SelectTrigger className="h-10 bg-muted/20">
                     <SelectValue />
                   </SelectTrigger>
@@ -143,6 +145,7 @@ export default function ServicesManagement() {
                       const val = parseInt(e.target.value);
                       setNewServiceDuration(isNaN(val) ? 0 : val);
                     }}
+                    disabled={!currentBusinessId}
                   />
                 </div>
                 <div className="space-y-2">
@@ -159,6 +162,7 @@ export default function ServicesManagement() {
                       const val = parseInt(e.target.value);
                       setNewServiceCapacity(isNaN(val) ? 1 : val);
                     }}
+                    disabled={!currentBusinessId}
                   />
                 </div>
               </div>
@@ -174,6 +178,7 @@ export default function ServicesManagement() {
                     const val = parseInt(e.target.value);
                     setNewServicePrice(isNaN(val) ? 0 : val);
                   }}
+                  disabled={!currentBusinessId}
                 />
               </div>
               <div className="space-y-2">
@@ -184,7 +189,7 @@ export default function ServicesManagement() {
                     size="sm" 
                     className="h-7 text-[10px] gap-1 text-primary hover:text-primary hover:bg-primary/10"
                     onClick={handleAiGenerate}
-                    disabled={isAiGenerating}
+                    disabled={isAiGenerating || !currentBusinessId}
                   >
                     {isAiGenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
                     AI Generate
@@ -195,17 +200,26 @@ export default function ServicesManagement() {
                   className="min-h-[100px] bg-muted/20" 
                   value={newServiceDescription}
                   onChange={(e) => setNewServiceDescription(e.target.value)}
+                  disabled={!currentBusinessId}
                 />
               </div>
-              <Button className="w-full h-11 rounded-xl shadow-lg mt-2 font-bold" onClick={handleAdd}>
+              <Button 
+                className="w-full h-11 rounded-xl shadow-lg mt-2 font-bold" 
+                onClick={handleAdd}
+                disabled={!currentBusinessId || !newServiceName}
+              >
                 Create Service
               </Button>
             </CardContent>
           </Card>
 
           <div className="lg:col-span-2 space-y-4">
-            <h3 className="font-bold text-lg mb-2">Existing Services for {currentBusinessId}</h3>
-            {isLoading ? (
+            <h3 className="font-bold text-lg mb-2">Existing Services for {currentBusinessId || '...'}</h3>
+            {!currentBusinessId ? (
+               <div className="text-center py-10 text-muted-foreground border-2 border-dashed rounded-2xl">
+                Please select a business from the menu to manage services.
+              </div>
+            ) : isLoading ? (
               <div className="flex justify-center py-10">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
               </div>

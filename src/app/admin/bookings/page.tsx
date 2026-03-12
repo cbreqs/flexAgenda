@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Navbar } from "@/components/layout/Navbar";
@@ -16,7 +17,7 @@ export default function BookingsManagement() {
   const { currentBusinessId } = useCurrentBusiness();
 
   const bookingsQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !currentBusinessId) return null;
     return query(
       collection(firestore, 'clientBusinesses', currentBusinessId, 'bookings'),
       orderBy('createdAt', 'desc')
@@ -33,7 +34,7 @@ export default function BookingsManagement() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-headline font-bold">Bookings</h1>
-            <p className="text-muted-foreground">Manage track reservations for <span className="font-bold text-primary">{currentBusinessId}</span>.</p>
+            <p className="text-muted-foreground">Manage track reservations for <span className="font-bold text-primary">{currentBusinessId || 'No Business Selected'}</span>.</p>
           </div>
           <Button variant="outline" className="gap-2">
             <Download className="w-4 h-4" />
@@ -51,7 +52,11 @@ export default function BookingsManagement() {
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            {isLoading ? (
+            {!currentBusinessId ? (
+               <div className="py-20 text-center text-muted-foreground italic">
+                Please select a business to view bookings.
+              </div>
+            ) : isLoading ? (
               <div className="flex justify-center items-center py-20">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
               </div>
