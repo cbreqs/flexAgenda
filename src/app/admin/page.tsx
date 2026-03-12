@@ -11,14 +11,14 @@ import {
   Clock, 
   Plus, 
   Sparkles,
-  ArrowUpRight,
   Loader2,
   Building2
 } from "lucide-react";
 import Link from "next/link";
 import { AiRecommendations } from "@/components/admin/AiRecommendations";
 import { useState } from "react";
-import { useCollection, useMemoFirebase, useFirestore, useCurrentBusiness } from '@/firebase';
+import { useCollection } from '@/firebase/firestore/use-collection';
+import { useFirestore, useCurrentBusiness, useMemoFirebase } from '@/firebase/provider';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
 
 export default function AdminDashboard() {
@@ -133,7 +133,7 @@ export default function AdminDashboard() {
               AI Scheduling Recommendations
             </CardTitle>
             <CardDescription className="max-w-xl">
-              Optimize {currentBusinessId}'s schedule using our advanced AI to find the perfect slot balance.
+              Optimize {currentBusinessId}&apos;s schedule using our advanced AI to find the perfect slot balance.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -167,7 +167,9 @@ export default function AdminDashboard() {
                         </div>
                         <div>
                           <p className="font-semibold">{booking.bookerName}</p>
-                          <p className="text-xs text-muted-foreground">{booking.bookingStatus} • {booking.createdAt ? new Date(booking.createdAt).toLocaleDateString() : 'Just now'}</p>
+                          <p className="text-xs text-muted-foreground text-ellipsis overflow-hidden max-w-[150px] whitespace-nowrap">
+                            {booking.bookingStatus} • {booking.createdAt ? new Date(booking.createdAt).toLocaleDateString() : 'Just now'}
+                          </p>
                         </div>
                       </div>
                       <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20 capitalize">{booking.bookingStatus}</Badge>

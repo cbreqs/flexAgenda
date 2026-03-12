@@ -6,7 +6,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { X, ExternalLink, ShieldAlert, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useFirebase } from '@/firebase';
+import { useFirebase } from '@/firebase/provider';
 
 export function FirebaseErrorListener() {
   const [error, setError] = useState<{ message: string; path?: string } | null>(null);
@@ -62,14 +62,14 @@ export function FirebaseErrorListener() {
               <p className="font-bold underline underline-offset-4">Console Checklist:</p>
               <div className="space-y-2">
                 <a 
-                  href="https://console.firebase.google.com/project/reqs-tech/firestore" 
+                  href={`https://console.firebase.google.com/project/${firebaseApp?.options.projectId || 'reqs-tech'}/firestore`}
                   target="_blank" 
                   rel="noreferrer"
                   className="flex items-center gap-2 font-bold hover:text-white group bg-white/10 p-2 rounded-md"
                 >
                   1. Open Firestore &rarr; Click &quot;Create Database&quot; <ExternalLink className="w-3 h-3 group-hover:scale-110 transition-transform" />
                 </a>
-                <p>2. Verify URL contains &quot;/project/reqs-tech/&quot;</p>
+                <p>2. Verify URL contains your project ID.</p>
                 <p>3. Ensure &quot;Anonymous Auth&quot; is enabled in the Auth tab.</p>
               </div>
             </div>
