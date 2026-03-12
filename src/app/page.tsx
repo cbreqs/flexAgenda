@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Navbar } from "@/components/layout/Navbar";
@@ -14,7 +15,7 @@ export default function Home() {
   const { currentBusinessId } = useCurrentBusiness();
 
   const servicesQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !currentBusinessId) return null;
     return query(
       collection(firestore, 'clientBusinesses', currentBusinessId, 'bookingTypes'), 
       where('isActive', '==', true)
@@ -42,8 +43,8 @@ export default function Home() {
                 Explore Services
               </Button>
               <Button size="lg" variant="outline" className="rounded-full px-8 border-primary text-primary hover:bg-primary/5" asChild>
-                <Link href="/admin">
-                  Go to Dashboard <ArrowRight className="ml-2 w-4 h-4" />
+                <Link href="/admin/businesses">
+                  Go to Admin <ArrowRight className="ml-2 w-4 h-4" />
                 </Link>
               </Button>
             </div>
@@ -55,7 +56,9 @@ export default function Home() {
           <div className="max-w-7xl mx-auto">
             <div className="flex items-end justify-between mb-12">
               <div>
-                <h2 className="text-3xl font-headline font-bold text-foreground">Available Services</h2>
+                <h2 className="text-3xl font-headline font-bold text-foreground">
+                  {currentBusinessId ? `Available Services for ${currentBusinessId}` : 'Available Services'}
+                </h2>
                 <p className="text-muted-foreground">Select a service offered by this business to begin your reservation.</p>
               </div>
             </div>
@@ -70,7 +73,14 @@ export default function Home() {
               </Alert>
             )}
 
-            {isLoading ? (
+            {!currentBusinessId ? (
+              <div className="text-center py-20 border rounded-2xl bg-muted/20 border-dashed">
+                <p className="text-muted-foreground mb-4">No business selected. Please select a business from the navigation menu to view services.</p>
+                <Button variant="outline" asChild>
+                  <Link href="/admin/businesses">Select a Business</Link>
+                </Button>
+              </div>
+            ) : isLoading ? (
               <div className="flex justify-center py-20">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
               </div>
@@ -82,7 +92,7 @@ export default function Home() {
               </div>
             ) : (
               <div className="text-center py-20 border rounded-2xl bg-muted/20 border-dashed">
-                <p className="text-muted-foreground">No active services found for this business yet. Switch businesses or create one in the dashboard.</p>
+                <p className="text-muted-foreground">No active services found for {currentBusinessId} yet. Create one in the dashboard.</p>
               </div>
             )}
           </div>

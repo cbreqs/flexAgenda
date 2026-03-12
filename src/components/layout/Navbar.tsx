@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -41,12 +42,13 @@ export function Navbar() {
   const navItems = isAdmin 
     ? [
         { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
+        { name: "Businesses", href: "/admin/businesses", icon: Building2 },
         { name: "Services", href: "/admin/services", icon: Settings },
         { name: "Bookings", href: "/admin/bookings", icon: Calendar },
       ]
     : [
         { name: "Home", href: "/", icon: LayoutDashboard },
-        { name: "Admin Portal", href: "/admin", icon: UserCircle },
+        { name: "Admin Portal", href: "/admin/businesses", icon: UserCircle },
       ];
 
   const currentBusinessName = businesses?.find(b => b.id === currentBusinessId)?.name || "Select Business";
@@ -87,7 +89,7 @@ export function Navbar() {
                         currentBusinessId === biz.id ? "bg-primary text-primary-foreground font-bold shadow-md" : "hover:bg-accent/50"
                       )}
                     >
-                      <Briefcase className={cn("w-4 h-4", currentBusinessId === biz.id ? "text-primary-foreground" : "text-primary/60")} />
+                      <Briefcase className={cn("w-4 h-4", currentBusinessId === biz.id ? "text-primary-foreground" : "text-primary-foreground/60")} />
                       <span className="truncate">{biz.name}</span>
                     </DropdownMenuItem>
                   ))
