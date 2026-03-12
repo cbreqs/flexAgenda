@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -36,7 +37,14 @@ export function BookingWizard({ open, onOpenChange, service }: BookingWizardProp
   const handleBack = () => setStep(step - 1);
 
   const handleSubmit = async () => {
-    if (!firestore) return;
+    if (!firestore || !currentBusinessId) {
+      toast({
+        title: "Configuration Error",
+        description: "No business is selected. Please select a business from the menu first.",
+        variant: "destructive"
+      });
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -45,6 +53,7 @@ export function BookingWizard({ open, onOpenChange, service }: BookingWizardProp
       const newBooking = {
         bookingTypeId: service.id,
         clientBusinessId: currentBusinessId,
+        availabilitySlotId: "manual-slot", // Placeholder for MVP
         bookerName: customer.name,
         bookerEmail: customer.email,
         bookerPhoneNumber: customer.phone,
@@ -66,11 +75,8 @@ export function BookingWizard({ open, onOpenChange, service }: BookingWizardProp
       });
       setStep(4);
     } catch (error) {
-      toast({
-        title: "Booking Failed",
-        description: "There was an error saving your booking.",
-        variant: "destructive"
-      });
+      // Error is handled by global emitter but we can log here for safety
+      console.error("Booking submission error:", error);
     } finally {
       setIsSubmitting(false);
     }

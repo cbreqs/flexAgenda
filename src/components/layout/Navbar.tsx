@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Calendar, LayoutDashboard, Settings, UserCircle, Menu, Wifi, ShieldAlert, ChevronDown, Building2, Briefcase, PlusCircle } from "lucide-react";
+import { Calendar, LayoutDashboard, Settings, UserCircle, Menu, Wifi, ShieldAlert, ChevronDown, Building2, Briefcase, PlusCircle, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
@@ -167,6 +167,15 @@ export function Navbar() {
         </div>
 
         <div className="hidden md:flex items-center gap-8">
+          {isAdmin && currentBusinessId && (
+            <Link 
+              href="/"
+              className="flex items-center gap-2 text-sm font-bold text-accent transition-all hover:text-primary"
+            >
+              <ExternalLink className="w-4 h-4" />
+              View Booking Page
+            </Link>
+          )}
           {navItems.map((item) => (
             <Link 
               key={item.href} 
