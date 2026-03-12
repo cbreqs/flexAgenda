@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Service } from "@/lib/types";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -28,10 +28,15 @@ export function BookingWizard({ open, onOpenChange, service }: BookingWizardProp
   const [attendees, setAttendees] = useState(1);
   const [customer, setCustomer] = useState({ name: "", email: "", phone: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [mounted, setMounted] = useState(false);
   
   const { toast } = useToast();
   const firestore = useFirestore();
   const { currentBusinessId } = useCurrentBusiness();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleNext = () => setStep(step + 1);
   const handleBack = () => setStep(step - 1);
@@ -121,14 +126,20 @@ export function BookingWizard({ open, onOpenChange, service }: BookingWizardProp
               <div className="space-y-8 animate-in fade-in duration-300">
                 <div className="space-y-4">
                   <Label className="text-xs uppercase tracking-wider text-muted-foreground font-black">1. Select Date</Label>
-                  <div className="flex justify-center border rounded-xl p-2 bg-muted/10 w-full">
-                    <Calendar
-                      mode="single"
-                      selected={date}
-                      onSelect={setDate}
-                      className="w-full flex justify-center"
-                      disabled={(date) => date < new Date(new Date().setHours(0,0,0,0)) || date > new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)}
-                    />
+                  <div className="border rounded-xl p-2 bg-muted/10 w-full">
+                    {mounted ? (
+                      <Calendar
+                        mode="single"
+                        selected={date}
+                        onSelect={setDate}
+                        className="w-full"
+                        disabled={(date) => date < new Date(new Date().setHours(0,0,0,0)) || date > new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)}
+                      />
+                    ) : (
+                      <div className="h-[300px] flex items-center justify-center">
+                        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                      </div>
+                    )}
                   </div>
                 </div>
                 

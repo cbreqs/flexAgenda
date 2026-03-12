@@ -4,6 +4,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { AuthInitializer } from '@/components/auth/AuthInitializer';
+import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
 export const metadata: Metadata = {
   title: 'FlexAgenda | Flexible Booking Solutions',
@@ -24,6 +25,7 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased min-h-screen bg-background text-foreground">
         <FirebaseClientProvider>
+          <FirebaseErrorListener />
           <AuthInitializer />
           {children}
           <Toaster />
