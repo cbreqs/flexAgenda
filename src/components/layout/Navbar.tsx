@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -41,7 +40,6 @@ export function Navbar() {
 
   const navItems = isAdmin 
     ? [
-        { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
         { name: "Businesses", href: "/admin/businesses", icon: Building2 },
         { name: "Services", href: "/admin/services", icon: Settings },
         { name: "Bookings", href: "/admin/bookings", icon: Calendar },
