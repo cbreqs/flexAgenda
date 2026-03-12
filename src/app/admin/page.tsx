@@ -12,7 +12,9 @@ import {
   Plus, 
   Sparkles,
   Loader2,
-  Building2
+  Building2,
+  ArrowRight,
+  LayoutDashboard
 } from "lucide-react";
 import Link from "next/link";
 import { AiRecommendations } from "@/components/admin/AiRecommendations";
@@ -27,12 +29,12 @@ export default function AdminDashboard() {
   const { currentBusinessId } = useCurrentBusiness();
 
   const servicesQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !currentBusinessId) return null;
     return collection(firestore, 'clientBusinesses', currentBusinessId, 'bookingTypes');
   }, [firestore, currentBusinessId]);
 
   const bookingsQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !currentBusinessId) return null;
     return query(
       collection(firestore, 'clientBusinesses', currentBusinessId, 'bookings'),
       orderBy('createdAt', 'desc'),
@@ -42,6 +44,35 @@ export default function AdminDashboard() {
 
   const { data: services, isLoading: servicesLoading } = useCollection(servicesQuery);
   const { data: bookings, isLoading: bookingsLoading } = useCollection(bookingsQuery);
+
+  if (!currentBusinessId) {
+    return (
+      <div className="flex flex-col min-h-screen bg-background text-foreground">
+        <Navbar />
+        <main className="flex-1 flex items-center justify-center p-4">
+          <Card className="max-w-md w-full border-primary/20 shadow-2xl bg-card/50 backdrop-blur-md p-8 text-center space-y-6">
+            <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center mx-auto mb-4">
+              <LayoutDashboard className="w-10 h-10 text-primary" />
+            </div>
+            <div className="space-y-2">
+              <h1 className="text-3xl font-headline font-bold">Admin Portal</h1>
+              <p className="text-muted-foreground">
+                To manage services and track bookings, please select a client business from your dashboard.
+              </p>
+            </div>
+            <Button size="lg" className="w-full rounded-xl font-bold shadow-lg" asChild>
+              <Link href="/admin/businesses">
+                Select a Business <ArrowRight className="ml-2 w-4 h-4" />
+              </Link>
+            </Button>
+            <p className="text-xs text-muted-foreground italic">
+              Each business maintains its own isolated database of services and customers.
+            </p>
+          </Card>
+        </main>
+      </div>
+    );
+  }
 
   const stats = [
     { 

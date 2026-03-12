@@ -39,7 +39,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   firestore,
   auth,
 }) => {
-  const [currentBusinessId, setCurrentBusinessId] = useState<string>('default-business');
+  // Change default to empty string so users are prompted to select a business
+  const [currentBusinessId, setCurrentBusinessId] = useState<string>('');
   const [userAuthState, setUserAuthState] = useState<UserAuthState>({
     user: null,
     isUserLoading: true,
