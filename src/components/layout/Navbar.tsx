@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Calendar, LayoutDashboard, Settings, UserCircle, Menu, Wifi, ShieldAlert, ChevronDown, Building2, Briefcase } from "lucide-react";
+import { Calendar, LayoutDashboard, Settings, UserCircle, Menu, Wifi, ShieldAlert, ChevronDown, Building2, Briefcase, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { useFirebase, useUser, useCurrentBusiness } from "@/firebase/provider";
+import { useFirebase, useUser, useCurrentBusiness, useCollection, useMemoFirebase } from "@/firebase";
+import { collection } from "firebase/firestore";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -17,13 +18,20 @@ export function Navbar() {
   const isAdmin = pathname.startsWith("/admin");
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const { areServicesAvailable, firebaseApp } = useFirebase();
+  const { areServicesAvailable, firebaseApp, firestore } = useFirebase();
   const { user, isUserLoading } = useUser();
   const { currentBusinessId, setCurrentBusinessId } = useCurrentBusiness();
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const businessesQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'clientBusinesses');
+  }, [firestore]);
+
+  const { data: businesses } = useCollection(businessesQuery);
 
   const isConnected = areServicesAvailable && user && !isUserLoading;
   const config = firebaseApp?.options || {};
@@ -41,13 +49,7 @@ export function Navbar() {
         { name: "Admin Portal", href: "/admin", icon: UserCircle },
       ];
 
-  const mockBusinesses = [
-    { id: 'default-business', name: 'Main Clinic' },
-    { id: 'yoga-studio', name: 'Zen Yoga' },
-    { id: 'tech-consult', name: 'Code Wizards' }
-  ];
-
-  const currentBusinessName = mockBusinesses.find(b => b.id === currentBusinessId)?.name || currentBusinessId;
+  const currentBusinessName = businesses?.find(b => b.id === currentBusinessId)?.name || "Select Business";
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 py-3">
@@ -69,27 +71,33 @@ export function Navbar() {
                   <ChevronDown className="w-3 h-3 text-muted-foreground" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-64 p-2">
-                <DropdownMenuLabel className="text-xs text-muted-foreground uppercase font-bold px-2 py-1.5">Switch Client Business</DropdownMenuLabel>
+              <DropdownMenuContent align="start" className="w-64 p-2 shadow-2xl rounded-xl border-primary/10">
+                <DropdownMenuLabel className="text-[10px] text-muted-foreground uppercase font-black px-3 py-2 tracking-widest">Active Client Business</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {mockBusinesses.map((biz) => (
-                  <DropdownMenuItem 
-                    key={biz.id} 
-                    onClick={() => setCurrentBusinessId(biz.id)}
-                    className={cn(
-                      "flex items-center gap-2 rounded-lg cursor-pointer px-3 py-2 my-1 transition-colors",
-                      currentBusinessId === biz.id ? "bg-primary text-primary-foreground font-bold" : "hover:bg-accent"
-                    )}
-                  >
-                    <Briefcase className={cn("w-4 h-4", currentBusinessId === biz.id ? "text-primary-foreground" : "text-muted-foreground")} />
-                    {biz.name}
-                  </DropdownMenuItem>
-                ))}
+                {businesses && businesses.length > 0 ? (
+                  businesses.map((biz: any) => (
+                    <DropdownMenuItem 
+                      key={biz.id} 
+                      onClick={() => setCurrentBusinessId(biz.id)}
+                      className={cn(
+                        "flex items-center gap-2 rounded-lg cursor-pointer px-3 py-2.5 my-1 transition-all",
+                        currentBusinessId === biz.id ? "bg-primary text-primary-foreground font-bold shadow-md" : "hover:bg-accent/50"
+                      )}
+                    >
+                      <Briefcase className={cn("w-4 h-4", currentBusinessId === biz.id ? "text-primary-foreground" : "text-primary/60")} />
+                      <span className="truncate">{biz.name}</span>
+                    </DropdownMenuItem>
+                  ))
+                ) : (
+                  <div className="px-3 py-4 text-center text-xs text-muted-foreground italic">
+                    No businesses found.
+                  </div>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href="/admin/businesses" className="flex items-center gap-2 text-primary font-semibold hover:bg-primary/5 rounded-lg w-full">
-                    <Settings className="w-4 h-4" />
-                    Manage All Businesses
+                  <Link href="/admin/businesses" className="flex items-center gap-2 text-primary font-bold hover:bg-primary/5 rounded-lg w-full px-3 py-2.5 mt-1">
+                    <PlusCircle className="w-4 h-4" />
+                    Manage Businesses
                   </Link>
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -103,7 +111,7 @@ export function Navbar() {
                   <Badge 
                     variant={isConnected && hasKey ? "outline" : "destructive"} 
                     className={cn(
-                      "hidden md:flex items-center gap-1.5 py-0.5 px-2 text-[10px] uppercase font-bold border-primary/20 bg-primary/5 cursor-help",
+                      "hidden md:flex items-center gap-1.5 py-0.5 px-2 text-[10px] uppercase font-black border-primary/20 bg-primary/5 cursor-help tracking-wider",
                       (!isConnected || !hasKey) && "animate-pulse"
                     )}
                   >
@@ -115,26 +123,22 @@ export function Navbar() {
                     ) : (
                       <>
                         <ShieldAlert className="w-3 h-3" />
-                        <span>Setup Required</span>
+                        <span>Offline</span>
                       </>
                     )}
                   </Badge>
                 </TooltipTrigger>
-                <TooltipContent className="max-w-xs" side="bottom">
-                  <div className="space-y-3 p-1">
-                    <p className="font-bold text-primary">Connection Debugger</p>
-                    <div className="text-[10px] space-y-2">
-                      <div className="flex justify-between gap-4">
-                        <span className="text-muted-foreground">Project ID:</span>
-                        <code className="bg-muted px-1 rounded">{projectId}</code>
+                <TooltipContent className="max-w-xs p-4 rounded-xl border-primary/10 shadow-2xl" side="bottom">
+                  <div className="space-y-3">
+                    <p className="font-black text-primary uppercase text-[10px] tracking-widest">Connection Status</p>
+                    <div className="text-[10px] space-y-2 font-mono">
+                      <div className="flex justify-between gap-4 border-b border-border/50 pb-1">
+                        <span className="text-muted-foreground">Project:</span>
+                        <span className="font-bold">{projectId}</span>
                       </div>
-                      <div className="flex justify-between gap-4">
-                        <span className="text-muted-foreground">API Key Set:</span>
-                        <span className={hasKey ? "text-green-500" : "text-destructive"}>{hasKey ? "Yes" : "No"}</span>
-                      </div>
-                      <div className="flex justify-between gap-4">
-                        <span className="text-muted-foreground">Auth Session:</span>
-                        <span className={user ? "text-green-500" : "text-destructive"}>{user ? "Active" : "Inactive"}</span>
+                      <div className="flex justify-between gap-4 border-b border-border/50 pb-1">
+                        <span className="text-muted-foreground">Auth:</span>
+                        <span className={user ? "text-green-500 font-bold" : "text-destructive font-bold"}>{user ? "Active" : "None"}</span>
                       </div>
                     </div>
                   </div>
@@ -144,18 +148,22 @@ export function Navbar() {
           )}
         </div>
 
-        <div className="hidden md:flex items-center gap-6">
+        <div className="hidden md:flex items-center gap-8">
           {navItems.map((item) => (
             <Link 
               key={item.href} 
               href={item.href}
               className={cn(
-                "flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary",
+                "flex items-center gap-2 text-sm font-bold transition-all hover:text-primary relative group py-1",
                 pathname === item.href ? "text-primary" : "text-muted-foreground"
               )}
             >
               <item.icon className="w-4 h-4" />
               {item.name}
+              <span className={cn(
+                "absolute bottom-0 left-0 h-0.5 bg-primary transition-all duration-300",
+                pathname === item.href ? "w-full" : "w-0 group-hover:w-1/2"
+              )} />
             </Link>
           ))}
         </div>
@@ -163,26 +171,40 @@ export function Navbar() {
         <div className="md:hidden">
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Menu className="w-6 h-6" />
+              <Button variant="ghost" size="icon" className="hover:bg-primary/10">
+                <Menu className="w-6 h-6 text-primary" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right">
-              <div className="flex flex-col gap-4 mt-8">
-                {navItems.map((item) => (
-                  <Link 
-                    key={item.href} 
-                    href={item.href}
-                    onClick={() => setIsOpen(false)}
-                    className={cn(
-                      "flex items-center gap-3 text-lg font-medium p-2 rounded-md",
-                      pathname === item.href ? "bg-primary/10 text-primary" : "text-muted-foreground"
-                    )}
-                  >
-                    <item.icon className="w-5 h-5" />
-                    {item.name}
-                  </Link>
-                ))}
+            <SheetContent side="right" className="w-[300px] border-l-primary/10">
+              <div className="flex flex-col gap-6 mt-12">
+                <div className="px-2 mb-4">
+                  <h3 className="text-[10px] uppercase font-black text-muted-foreground tracking-widest mb-4">Navigation</h3>
+                  <div className="flex flex-col gap-2">
+                    {navItems.map((item) => (
+                      <Link 
+                        key={item.href} 
+                        href={item.href}
+                        onClick={() => setIsOpen(false)}
+                        className={cn(
+                          "flex items-center gap-3 text-base font-bold p-3 rounded-xl transition-all",
+                          pathname === item.href ? "bg-primary text-primary-foreground shadow-lg" : "text-muted-foreground hover:bg-muted"
+                        )}
+                      >
+                        <item.icon className="w-5 h-5" />
+                        {item.name}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="px-2">
+                  <h3 className="text-[10px] uppercase font-black text-muted-foreground tracking-widest mb-4">Manage Account</h3>
+                  <Button variant="outline" className="w-full justify-start gap-3 rounded-xl h-12 border-primary/20 text-primary font-bold" asChild>
+                    <Link href="/admin/businesses">
+                      <Settings className="w-5 h-5" /> All Businesses
+                    </Link>
+                  </Button>
+                </div>
               </div>
             </SheetContent>
           </Sheet>
