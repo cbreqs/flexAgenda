@@ -121,12 +121,12 @@ export function BookingWizard({ open, onOpenChange, service }: BookingWizardProp
               <div className="space-y-8 animate-in fade-in duration-300">
                 <div className="space-y-4">
                   <Label className="text-xs uppercase tracking-wider text-muted-foreground font-black">1. Select Date</Label>
-                  <div className="flex justify-center border rounded-xl p-2 bg-muted/10">
+                  <div className="flex justify-center border rounded-xl p-2 bg-muted/10 w-full">
                     <Calendar
                       mode="single"
                       selected={date}
                       onSelect={setDate}
-                      className="w-full"
+                      className="w-full flex justify-center"
                       disabled={(date) => date < new Date(new Date().setHours(0,0,0,0)) || date > new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)}
                     />
                   </div>
