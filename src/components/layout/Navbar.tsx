@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Calendar, LayoutDashboard, Settings, UserCircle, Menu, Wifi, ShieldAlert, ChevronDown, Building2, Briefcase, PlusCircle, ExternalLink, LogOut, LogIn } from "lucide-react";
+import { Calendar, Settings, UserCircle, Menu, Wifi, ShieldAlert, ChevronDown, Building2, Briefcase, PlusCircle, ExternalLink, LogOut, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
@@ -41,7 +41,6 @@ export function Navbar() {
 
   const isConnected = areServicesAvailable && user && !isUserLoading;
   const config = firebaseApp?.options || {};
-  const projectId = config.projectId || "Not Set";
   const hasKey = config.apiKey && config.apiKey !== "PASTE_YOUR_API_KEY_HERE";
 
   const handleSignOut = () => {
@@ -58,8 +57,8 @@ export function Navbar() {
         { name: "Bookings", href: "/admin/bookings", icon: Calendar },
       ]
     : [
-        { name: "Home", href: "/", icon: LayoutDashboard },
-        { name: "Client Login", href: "/login", icon: UserCircle },
+        { name: "Home", href: "/", icon: Building2 },
+        { name: "Client Portal", href: "/login", icon: UserCircle },
       ];
 
   const currentBusinessName = businesses?.find(b => b.id === currentBusinessId)?.name || "Select Business";
@@ -106,7 +105,7 @@ export function Navbar() {
                   ))
                 ) : (
                   <div className="px-3 py-4 text-center text-xs text-muted-foreground italic">
-                    No businesses found.
+                    No business profiles found.
                   </div>
                 )}
                 
@@ -243,7 +242,7 @@ export function Navbar() {
                   ) : (
                     <Button variant="default" className="w-full justify-start gap-3 rounded-xl h-12 font-bold" asChild>
                       <Link href="/login" onClick={() => setIsOpen(false)}>
-                        <LogIn className="w-5 h-5" /> Client Login
+                        <LogIn className="w-5 h-5" /> Client Portal
                       </Link>
                     </Button>
                   )}

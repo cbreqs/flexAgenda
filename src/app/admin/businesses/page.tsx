@@ -27,8 +27,6 @@ export default function BusinessSelectionPage() {
 
   const businessesQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    // Query only businesses where the logged-in user is a member
-    // Using the 'members' map logic: where('members.UID', '!=', null)
     return query(
       collection(firestore, 'clientBusinesses'),
       where(`members.${user.uid}`, 'in', ['admin', 'editor', 'viewer'])
@@ -39,7 +37,7 @@ export default function BusinessSelectionPage() {
 
   const handleCreateBusiness = () => {
     if (!firestore || !newBiz.name || !newBiz.id || !user) {
-      toast({ title: "Validation Error", description: "Name, ID, and Login are required.", variant: "destructive" });
+      toast({ title: "Validation Error", description: "Name and Unique ID are required.", variant: "destructive" });
       return;
     }
 
@@ -51,11 +49,11 @@ export default function BusinessSelectionPage() {
       contactEmail: newBiz.email,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      members: { [user.uid]: 'admin' } // The current user is the admin
+      members: { [user.uid]: 'admin' }
     };
 
     setDocumentNonBlocking(docRef, businessData, { merge: true });
-    toast({ title: "Business Registered", description: `${newBiz.name} is now available.` });
+    toast({ title: "Business Profile Created", description: `${newBiz.name} has been initialized.` });
     setIsCreateOpen(false);
     setNewBiz({ name: "", id: "", description: "", email: "" });
   };
@@ -76,18 +74,18 @@ export default function BusinessSelectionPage() {
 
   if (!user && !isUserLoading) {
     return (
-      <div className="flex flex-col min-h-screen bg-background">
+      <div className="flex flex-col min-h-screen bg-background text-foreground">
         <Navbar />
         <main className="flex-1 flex items-center justify-center p-4">
-          <Card className="max-w-md w-full text-center p-8 space-y-6">
+          <Card className="max-w-md w-full text-center p-8 space-y-6 bg-card/50 backdrop-blur-md border-primary/20">
             <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto">
               <LogIn className="w-8 h-8 text-primary" />
             </div>
             <div className="space-y-2">
-              <h2 className="text-2xl font-bold">Authentication Required</h2>
-              <p className="text-muted-foreground">Please log in to your client account to manage your businesses.</p>
+              <h2 className="text-2xl font-bold">Client Login Required</h2>
+              <p className="text-muted-foreground">Log in to your account to manage your business profiles and bookings.</p>
             </div>
-            <Button className="w-full h-12 font-bold" asChild>
+            <Button className="w-full h-12 font-bold rounded-xl" asChild>
               <Link href="/login">Go to Login</Link>
             </Button>
           </Card>
@@ -105,52 +103,52 @@ export default function BusinessSelectionPage() {
           <div className="text-center md:text-left space-y-2">
             <h1 className="text-4xl font-headline font-bold">Your Businesses</h1>
             <p className="text-muted-foreground max-w-xl">
-              Select a business profile to manage its specific services and schedule.
+              Switch between your different business profiles to manage their specific services, schedules, and customer bookings.
             </p>
           </div>
           
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild>
               <Button size="lg" className="rounded-xl gap-2 font-bold shadow-lg">
-                <Plus className="w-5 h-5" /> Register New Client
+                <Plus className="w-5 h-5" /> Register New Business
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md rounded-2xl">
+            <DialogContent className="max-w-md rounded-2xl border-primary/20 shadow-2xl">
               <DialogHeader>
-                <DialogTitle>New Client Business</DialogTitle>
-                <DialogDescription>Enter the basic details to initialize a new business profile.</DialogDescription>
+                <DialogTitle>Add Business Profile</DialogTitle>
+                <DialogDescription>Create a new environment for your services and bookings.</DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
                   <Label>Business Name</Label>
                   <Input 
-                    placeholder="e.g. Acme Wellness" 
+                    placeholder="e.g. Acme Wellness Center" 
                     value={newBiz.name}
                     onChange={(e) => setNewBiz({...newBiz, name: e.target.value})}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Unique ID (slug)</Label>
+                  <Label>Unique Handle (URL slug)</Label>
                   <Input 
                     placeholder="e.g. acme-wellness" 
                     value={newBiz.id}
                     onChange={(e) => setNewBiz({...newBiz, id: e.target.value.toLowerCase().replace(/\s+/g, '-')})}
                   />
-                  <p className="text-[10px] text-muted-foreground">This will be used in URLs and database paths.</p>
+                  <p className="text-[10px] text-muted-foreground">This ID is used for your unique booking links.</p>
                 </div>
                 <div className="space-y-2">
-                  <Label>Contact Email</Label>
+                  <Label>Primary Contact Email</Label>
                   <Input 
                     type="email"
-                    placeholder="admin@acme.com" 
+                    placeholder="contact@acme.com" 
                     value={newBiz.email}
                     onChange={(e) => setNewBiz({...newBiz, email: e.target.value})}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Description</Label>
+                  <Label>Brief Description</Label>
                   <Textarea 
-                    placeholder="Brief overview of services..." 
+                    placeholder="Tell your clients what you offer..." 
                     value={newBiz.description}
                     onChange={(e) => setNewBiz({...newBiz, description: e.target.value})}
                   />
@@ -167,7 +165,7 @@ export default function BusinessSelectionPage() {
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <Loader2 className="w-10 h-10 animate-spin text-primary" />
-            <p className="text-muted-foreground animate-pulse font-medium">Loading your businesses...</p>
+            <p className="text-muted-foreground animate-pulse font-medium">Fetching your business profiles...</p>
           </div>
         ) : businesses && businesses.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -177,7 +175,7 @@ export default function BusinessSelectionPage() {
                 <Card 
                   key={biz.id} 
                   className={cn(
-                    "relative flex flex-col h-full transition-all duration-300 border-2 overflow-hidden",
+                    "relative flex flex-col h-full transition-all duration-300 border-2 overflow-hidden bg-card/40 backdrop-blur-sm",
                     isActive ? "border-primary shadow-xl ring-2 ring-primary/20 scale-[1.02]" : "border-border hover:border-primary/40 hover:shadow-md"
                   )}
                 >
@@ -197,14 +195,14 @@ export default function BusinessSelectionPage() {
                   </CardHeader>
                   <CardContent className="pt-6 flex-1">
                     <p className="text-sm text-muted-foreground line-clamp-3 italic">
-                      {biz.description || "No description provided."}
+                      {biz.description || "No description provided for this profile."}
                     </p>
                   </CardContent>
                   <CardFooter className="pt-0 pb-6 px-6 flex gap-2">
                     {isActive ? (
                       <Button className="flex-1 rounded-xl gap-2 font-bold shadow-md" asChild>
-                        <Link href="/admin">
-                          Admin Panel <LayoutDashboard className="w-4 h-4" />
+                        <Link href="/admin/services">
+                          Manage Services <LayoutDashboard className="w-4 h-4" />
                         </Link>
                       </Button>
                     ) : (
@@ -213,7 +211,7 @@ export default function BusinessSelectionPage() {
                         className="flex-1 rounded-xl border-primary/50 text-primary hover:bg-primary/10 font-bold"
                         onClick={() => setCurrentBusinessId(biz.id)}
                       >
-                        Select
+                        Select Profile
                       </Button>
                     )}
                     <Button 
@@ -233,10 +231,10 @@ export default function BusinessSelectionPage() {
           <div className="p-20 rounded-3xl bg-muted/20 border-2 border-dashed flex flex-col items-center gap-4 text-center">
             <Building2 className="w-12 h-12 text-muted-foreground/50" />
             <div className="space-y-1">
-              <h3 className="text-xl font-bold">No Businesses Found</h3>
-              <p className="text-muted-foreground">Register your first client business profile to start managing.</p>
+              <h3 className="text-xl font-bold">No Business Profiles Created</h3>
+              <p className="text-muted-foreground">Register your first business to start managing your services and schedule.</p>
             </div>
-            <Button onClick={() => setIsCreateOpen(true)} className="mt-4 rounded-xl font-bold">
+            <Button onClick={() => setIsCreateOpen(true)} className="mt-4 rounded-xl font-bold px-8">
               Register First Business
             </Button>
           </div>
@@ -248,9 +246,9 @@ export default function BusinessSelectionPage() {
               <Sparkles className="w-8 h-8 text-primary" />
             </div>
             <div className="space-y-2 text-center md:text-left">
-              <h3 className="text-xl font-bold">Isolated Client Environments</h3>
+              <h3 className="text-xl font-bold">Multi-Tenant Isolation</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                As a client, you only see the businesses you have permission to manage. FlexAgenda ensures that your services, bookings, and customer data remain strictly isolated from other clients on the platform.
+                FlexAgenda ensures each of your business profiles is strictly isolated. Services, availability slots, and booking data are kept separate, allowing you to run multiple independent operations from a single account.
               </p>
             </div>
           </div>
