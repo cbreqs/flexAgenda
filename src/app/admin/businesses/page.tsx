@@ -28,7 +28,7 @@ export default function BusinessSelectionPage() {
   const businessesQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(
-      collection(firestore, 'clientBusinesses'),
+      collection(firestore, 'businesses'),
       where(`members.${user.uid}`, 'in', ['admin', 'editor', 'viewer'])
     );
   }, [firestore, user]);
@@ -41,7 +41,7 @@ export default function BusinessSelectionPage() {
       return;
     }
 
-    const docRef = doc(firestore, 'clientBusinesses', newBiz.id);
+    const docRef = doc(firestore, 'businesses', newBiz.id);
     const businessData = {
       id: newBiz.id,
       name: newBiz.name,
@@ -67,7 +67,7 @@ export default function BusinessSelectionPage() {
       return;
     }
 
-    const docRef = doc(firestore, 'clientBusinesses', id);
+    const docRef = doc(firestore, 'businesses', id);
     deleteDocumentNonBlocking(docRef);
     toast({ title: "Business Removed", description: `${name} has been deleted.` });
   };
@@ -101,9 +101,9 @@ export default function BusinessSelectionPage() {
       <main className="flex-1 p-4 md:p-8 max-w-6xl mx-auto w-full space-y-10">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="text-center md:text-left space-y-2">
-            <h1 className="text-4xl font-headline font-bold">Your Businesses</h1>
+            <h1 className="text-4xl font-headline font-bold">Business Management</h1>
             <p className="text-muted-foreground max-w-xl">
-              Switch between your different business profiles to manage their specific services, schedules, and customer bookings.
+              Switch between profiles to manage services and bookings.
             </p>
           </div>
           
@@ -134,7 +134,6 @@ export default function BusinessSelectionPage() {
                     value={newBiz.id}
                     onChange={(e) => setNewBiz({...newBiz, id: e.target.value.toLowerCase().replace(/\s+/g, '-')})}
                   />
-                  <p className="text-[10px] text-muted-foreground">This ID is used for your unique booking links.</p>
                 </div>
                 <div className="space-y-2">
                   <Label>Primary Contact Email</Label>
@@ -143,14 +142,6 @@ export default function BusinessSelectionPage() {
                     placeholder="contact@acme.com" 
                     value={newBiz.email}
                     onChange={(e) => setNewBiz({...newBiz, email: e.target.value})}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Brief Description</Label>
-                  <Textarea 
-                    placeholder="Tell your clients what you offer..." 
-                    value={newBiz.description}
-                    onChange={(e) => setNewBiz({...newBiz, description: e.target.value})}
                   />
                 </div>
               </div>
@@ -189,13 +180,11 @@ export default function BusinessSelectionPage() {
                       <Building2 className="w-6 h-6 text-primary" />
                     </div>
                     <CardTitle className="text-xl truncate">{biz.name}</CardTitle>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="font-mono text-[10px] bg-background/50 uppercase">ID: {biz.id}</Badge>
-                    </div>
+                    <Badge variant="outline" className="w-fit mt-2 font-mono text-[10px] bg-background/50 uppercase">ID: {biz.id}</Badge>
                   </CardHeader>
                   <CardContent className="pt-6 flex-1">
                     <p className="text-sm text-muted-foreground line-clamp-3 italic">
-                      {biz.description || "No description provided for this profile."}
+                      {biz.description || "No description provided."}
                     </p>
                   </CardContent>
                   <CardFooter className="pt-0 pb-6 px-6 flex gap-2">
@@ -230,29 +219,12 @@ export default function BusinessSelectionPage() {
         ) : (
           <div className="p-20 rounded-3xl bg-muted/20 border-2 border-dashed flex flex-col items-center gap-4 text-center">
             <Building2 className="w-12 h-12 text-muted-foreground/50" />
-            <div className="space-y-1">
-              <h3 className="text-xl font-bold">No Business Profiles Created</h3>
-              <p className="text-muted-foreground">Register your first business to start managing your services and schedule.</p>
-            </div>
+            <h3 className="text-xl font-bold">No Business Profiles Created</h3>
             <Button onClick={() => setIsCreateOpen(true)} className="mt-4 rounded-xl font-bold px-8">
               Register First Business
             </Button>
           </div>
         )}
-
-        <Card className="border-none bg-gradient-to-r from-primary/10 to-accent/10 p-8 rounded-3xl">
-          <div className="flex flex-col md:flex-row items-center gap-8">
-            <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0">
-              <Sparkles className="w-8 h-8 text-primary" />
-            </div>
-            <div className="space-y-2 text-center md:text-left">
-              <h3 className="text-xl font-bold">Multi-Tenant Isolation</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                FlexAgenda ensures each of your business profiles is strictly isolated. Services, availability slots, and booking data are kept separate, allowing you to run multiple independent operations from a single account.
-              </p>
-            </div>
-          </div>
-        </Card>
       </main>
     </div>
   );

@@ -1,65 +1,46 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    /**
-     * CORE PHILOSOPHY
-     * This ruleset implements a membership-based access model for FlexAgenda.
-     * It uses a 'members' map in the business documents to manage roles (admin, editor, viewer).
-     */
-
-    // --- Helper Functions ---
 
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /** @description Checks if the user has a valid role in the provided members map. */
     function hasRole(members, uid) {
       return uid in members && (members[uid] == 'admin' || members[uid] == 'editor' || members[uid] == 'viewer');
     }
 
-    /** @description Checks if the user is an admin in the provided members map. */
     function isAdmin(members, uid) {
       return uid in members && members[uid] == 'admin';
     }
 
-    // --- Collection Rules ---
-
-    match /clientBusinesses/{businessId} {
-      /** 
-       * Public can view business profiles. 
-       * Logged in users can list their own businesses.
-       */
+    // New businesses collection
+    match /businesses/{businessId} {
       allow get: if true;
       allow list: if isSignedIn() && hasRole(resource.data.members, request.auth.uid);
-      
-      /** Any signed-in user can register a new business. */
       allow create: if isSignedIn();
-      
-      /** Only admins can update or delete business profile settings. */
       allow update, delete: if isSignedIn() && isAdmin(resource.data.members, request.auth.uid);
 
-      /** Services/Booking Types are nested under businesses. */
       match /bookingTypes/{typeId} {
         allow read: if true;
-        allow write: if isSignedIn() && hasRole(get(/databases/$(database)/documents/clientBusinesses/$(businessId)).data.members, request.auth.uid);
+        allow write: if isSignedIn() && hasRole(get(/databases/$(database)/documents/businesses/$(businessId)).data.members, request.auth.uid);
       }
 
-      /** Bookings are nested under businesses for isolation. */
       match /bookings/{bookingId} {
-        // Admins/Staff can see all bookings. Users can see their own if email matches.
-        allow list: if isSignedIn() && hasRole(get(/databases/$(database)/documents/clientBusinesses/$(businessId)).data.members, request.auth.uid);
-        allow get: if true; // Access via confirmation code usually handled in app logic or check specific code field
-        allow create: if true; // Public can book
-        allow update, delete: if isSignedIn() && hasRole(get(/databases/$(database)/documents/clientBusinesses/$(businessId)).data.members, request.auth.uid);
+        allow list: if isSignedIn() && hasRole(get(/databases/$(database)/documents/businesses/$(businessId)).data.members, request.auth.uid);
+        allow get: if true;
+        allow create: if true;
+        allow update, delete: if isSignedIn() && hasRole(get(/databases/$(database)/documents/businesses/$(businessId)).data.members, request.auth.uid);
       }
     }
-    
-    /** Top-level platform admin check (if needed in future). */
-    match /platform_admins/{uid} {
-      allow read: if isSignedIn();
-      allow write: if false; // Managed manually for security
+
+    // New grandclients collection
+    match /grandclients/{clientId} {
+      allow read: if true; // Public can verify or check records
+      allow create: if true; // Anyone booking can create a record
+      allow update: if true; // Anyone booking can update their record
+      allow delete: if false; // Only platform admins could delete (not defined yet)
     }
   }
 }

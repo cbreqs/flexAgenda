@@ -1,8 +1,9 @@
+
 {
   "entities": {
-    "ClientBusiness": {
+    "Business": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "ClientBusiness",
+      "title": "Business",
       "type": "object",
       "description": "Represents a business using the platform.",
       "properties": {
@@ -17,6 +18,19 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "name", "members"]
+    },
+    "GrandClient": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "GrandClient",
+      "type": "object",
+      "description": "A central record for an end-user client.",
+      "properties": {
+        "g-client_email": { "type": "string", "format": "email" },
+        "g-client_first": { "type": "string" },
+        "g-client_last": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["g-client_email"]
     },
     "BookingType": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -56,15 +70,23 @@
   "firestore": {
     "structure": [
       {
-        "path": "/clientBusinesses/{businessId}",
+        "path": "/businesses/{businessId}",
         "definition": {
-          "entityName": "ClientBusiness",
-          "schema": { "$ref": "#/backend/entities/ClientBusiness" },
+          "entityName": "Business",
+          "schema": { "$ref": "#/backend/entities/Business" },
           "description": "Root business documents."
         }
       },
       {
-        "path": "/clientBusinesses/{businessId}/bookingTypes/{typeId}",
+        "path": "/grandclients/{clientId}",
+        "definition": {
+          "entityName": "GrandClient",
+          "schema": { "$ref": "#/backend/entities/GrandClient" },
+          "description": "Global end-user client information."
+        }
+      },
+      {
+        "path": "/businesses/{businessId}/bookingTypes/{typeId}",
         "definition": {
           "entityName": "BookingType",
           "schema": { "$ref": "#/backend/entities/BookingType" },
@@ -72,7 +94,7 @@
         }
       },
       {
-        "path": "/clientBusinesses/{businessId}/bookings/{bookingId}",
+        "path": "/businesses/{businessId}/bookings/{bookingId}",
         "definition": {
           "entityName": "Booking",
           "schema": { "$ref": "#/backend/entities/Booking" },

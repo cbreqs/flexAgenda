@@ -32,23 +32,19 @@ export default function ServicesManagement() {
 
   const servicesQuery = useMemoFirebase(() => {
     if (!firestore || !currentBusinessId) return null;
-    return collection(firestore, 'clientBusinesses', currentBusinessId, 'bookingTypes');
+    return collection(firestore, 'businesses', currentBusinessId, 'bookingTypes');
   }, [firestore, currentBusinessId]);
 
   const { data: services, isLoading } = useCollection(servicesQuery);
 
   const handleAiGenerate = async () => {
-    if (!newServiceName) {
-      toast({ title: "Name Required", description: "Enter a service name first so the AI knows what to write about.", variant: "destructive" });
-      return;
-    }
+    if (!newServiceName) return;
     setIsAiGenerating(true);
     try {
       const { description } = await generateServiceDescription({ serviceInput: newServiceName });
       setNewServiceDescription(description);
-      toast({ title: "AI Generation Complete", description: "Description updated!" });
     } catch (err) {
-      toast({ title: "AI Error", description: "Failed to generate description. Please try again.", variant: "destructive" });
+      toast({ title: "AI Error", variant: "destructive" });
     } finally {
       setIsAiGenerating(false);
     }
@@ -57,208 +53,91 @@ export default function ServicesManagement() {
   const handleAdd = () => {
     if (!firestore || !newServiceName || !currentBusinessId) return;
 
-    const colRef = collection(firestore, 'clientBusinesses', currentBusinessId, 'bookingTypes');
+    const colRef = collection(firestore, 'businesses', currentBusinessId, 'bookingTypes');
     const newService = {
       name: newServiceName,
       type: newServiceType,
-      defaultDurationMinutes: newServiceDuration || 0,
+      defaultDurationMinutes: newServiceDuration || 45,
       maxCapacity: newServiceCapacity || 1,
       price: newServicePrice || 0,
       description: newServiceDescription,
       isActive: true,
-      requiresApproval: false,
-      clientBusinessId: currentBusinessId,
-      clientBusinessMembers: { 'placeholder-uid': 'admin' }, 
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
     };
 
     addDocumentNonBlocking(colRef, newService);
-    
-    toast({ title: "Service Created", description: `Service added to ${currentBusinessId}.` });
-    
+    toast({ title: "Service Created" });
     setNewServiceName("");
     setNewServiceDescription("");
-    setNewServiceDuration(45);
-    setNewServiceCapacity(1);
-    setNewServicePrice(0);
   };
 
   const handleDelete = (id: string) => {
     if (!firestore || !currentBusinessId) return;
-    const docRef = doc(firestore, 'clientBusinesses', currentBusinessId, 'bookingTypes', id);
+    const docRef = doc(firestore, 'businesses', currentBusinessId, 'bookingTypes', id);
     deleteDocumentNonBlocking(docRef);
-    toast({ title: "Service Deleted", description: "The service has been removed." });
   };
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Navbar />
-      
       <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full space-y-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-headline font-bold">Services</h1>
-            <p className="text-muted-foreground">Configure booking types for <span className="font-bold text-primary">{currentBusinessId || 'No Business Selected'}</span>.</p>
-          </div>
-        </div>
-
+        <h1 className="text-3xl font-bold">Services</h1>
+        
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <Card className="lg:col-span-1 border shadow-md h-fit sticky top-24 bg-card/50">
-            <CardHeader className="bg-primary text-primary-foreground rounded-t-xl">
-              <CardTitle className="text-lg">Create New Service</CardTitle>
-              <CardDescription className="text-primary-foreground/80">Add a new appointment or event type.</CardDescription>
+          <Card className="lg:col-span-1 h-fit bg-card/50">
+            <CardHeader>
+              <CardTitle>New Service</CardTitle>
             </CardHeader>
-            <CardContent className="pt-6 space-y-4">
+            <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>Service Name</Label>
-                <Input 
-                  placeholder="e.g. 1-on-1 Consultation" 
-                  className="h-10 bg-muted/20" 
-                  value={newServiceName}
-                  onChange={(e) => setNewServiceName(e.target.value)}
-                  disabled={!currentBusinessId}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Type</Label>
-                <Select value={newServiceType} onValueChange={setNewServiceType} disabled={!currentBusinessId}>
-                  <SelectTrigger className="h-10 bg-muted/20">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="appointment">Appointment (Sequential)</SelectItem>
-                    <SelectItem value="event">Event (Specific Slot)</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label>Name</Label>
+                <Input value={newServiceName} onChange={(e) => setNewServiceName(e.target.value)} disabled={!currentBusinessId} />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2 text-xs">
-                    <Clock className="w-3 h-3" /> Duration (min)
-                  </Label>
-                  <Input 
-                    type="number" 
-                    value={newServiceDuration} 
-                    className="h-10 bg-muted/20"
-                    onChange={(e) => {
-                      const val = parseInt(e.target.value);
-                      setNewServiceDuration(isNaN(val) ? 0 : val);
-                    }}
-                    disabled={!currentBusinessId}
-                  />
+                  <Label>Duration (min)</Label>
+                  <Input type="number" value={newServiceDuration} onChange={(e) => setNewServiceDuration(parseInt(e.target.value))} />
                 </div>
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2 text-xs">
-                    <Users className="w-3 h-3" /> Max Capacity
-                  </Label>
-                  <Input 
-                    type="number" 
-                    value={newServiceCapacity} 
-                    min={1} 
-                    max={6} 
-                    className="h-10 bg-muted/20"
-                    onChange={(e) => {
-                      const val = parseInt(e.target.value);
-                      setNewServiceCapacity(isNaN(val) ? 1 : val);
-                    }}
-                    disabled={!currentBusinessId}
-                  />
+                  <Label>Max Pax</Label>
+                  <Input type="number" value={newServiceCapacity} onChange={(e) => setNewServiceCapacity(parseInt(e.target.value))} />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label className="flex items-center gap-2 text-xs">
-                  <DollarSign className="w-3 h-3" /> Price ($)
-                </Label>
-                <Input 
-                  type="number" 
-                  value={newServicePrice} 
-                  className="h-10 bg-muted/20"
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value);
-                    setNewServicePrice(isNaN(val) ? 0 : val);
-                  }}
-                  disabled={!currentBusinessId}
-                />
+                <Label>Description</Label>
+                <Textarea value={newServiceDescription} onChange={(e) => setNewServiceDescription(e.target.value)} />
               </div>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <Label>Description</Label>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="h-7 text-[10px] gap-1 text-primary hover:text-primary hover:bg-primary/10"
-                    onClick={handleAiGenerate}
-                    disabled={isAiGenerating || !currentBusinessId}
-                  >
-                    {isAiGenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-                    AI Generate
-                  </Button>
-                </div>
-                <Textarea 
-                  placeholder="What is this service about?" 
-                  className="min-h-[100px] bg-muted/20" 
-                  value={newServiceDescription}
-                  onChange={(e) => setNewServiceDescription(e.target.value)}
-                  disabled={!currentBusinessId}
-                />
-              </div>
-              <Button 
-                className="w-full h-11 rounded-xl shadow-lg mt-2 font-bold" 
-                onClick={handleAdd}
-                disabled={!currentBusinessId || !newServiceName}
-              >
+              <Button className="w-full font-bold" onClick={handleAdd} disabled={!currentBusinessId || !newServiceName}>
                 Create Service
               </Button>
             </CardContent>
           </Card>
 
           <div className="lg:col-span-2 space-y-4">
-            <h3 className="font-bold text-lg mb-2">Existing Services for {currentBusinessId || '...'}</h3>
             {!currentBusinessId ? (
-               <div className="text-center py-10 text-muted-foreground border-2 border-dashed rounded-2xl">
-                Please select a business from the menu to manage services.
-              </div>
+              <div className="text-center py-10">Select a business profile first.</div>
             ) : isLoading ? (
-              <div className="flex justify-center py-10">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
-              </div>
+              <div className="flex justify-center py-10"><Loader2 className="animate-spin" /></div>
             ) : services && services.length > 0 ? (
               services.map((service: any) => (
-                <Card key={service.id} className="border shadow-sm hover:shadow-md transition-all overflow-hidden bg-card/30">
-                  <div className="flex flex-col md:flex-row md:items-center p-6 gap-6">
-                    <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center shrink-0">
-                      <Settings className="w-8 h-8 text-primary" />
-                    </div>
-                    <div className="flex-1 space-y-1">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-bold text-xl">{service.name}</h4>
-                        <Badge variant="outline" className="capitalize text-[10px] py-0">{service.type}</Badge>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-4 h-4" />
-                          {service.defaultDurationMinutes} mins
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Users className="w-4 h-4" />
-                          Max {service.maxCapacity} people
-                        </div>
-                        <div className="font-bold text-primary">
-                          ${service.price || 0}
-                        </div>
+                <Card key={service.id} className="bg-card/30">
+                  <CardContent className="p-6 flex justify-between items-center">
+                    <div>
+                      <h4 className="font-bold text-lg">{service.name}</h4>
+                      <div className="flex gap-4 text-xs text-muted-foreground">
+                        <span>{service.defaultDurationMinutes}m</span>
+                        <span>Max {service.maxCapacity}</span>
+                        <span className="text-primary font-bold">${service.price}</span>
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Button variant="ghost" size="icon" className="hover:bg-destructive/10 text-muted-foreground hover:text-destructive" onClick={() => handleDelete(service.id)}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
+                    <Button variant="ghost" size="icon" onClick={() => handleDelete(service.id)} className="text-muted-foreground hover:text-destructive">
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </CardContent>
                 </Card>
               ))
             ) : (
-              <p className="text-center py-10 text-muted-foreground border-2 border-dashed rounded-2xl">No services configured yet for this business.</p>
+              <div className="text-center py-10 border-2 border-dashed rounded-xl">No services found.</div>
             )}
           </div>
         </div>

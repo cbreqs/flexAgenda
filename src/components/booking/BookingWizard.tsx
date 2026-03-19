@@ -12,8 +12,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { CheckCircle2, ChevronRight, ChevronLeft, Calendar as CalendarIcon, Clock, User, Loader2 } from "lucide-react";
-import { useFirestore, addDocumentNonBlocking, useCurrentBusiness } from "@/firebase";
-import { collection } from "firebase/firestore";
+import { useFirestore, addDocumentNonBlocking, setDocumentNonBlocking, useCurrentBusiness } from "@/firebase";
+import { collection, doc } from "firebase/firestore";
 
 interface BookingWizardProps {
   open: boolean;
@@ -45,7 +45,7 @@ export function BookingWizard({ open, onOpenChange, service }: BookingWizardProp
     if (!firestore || !currentBusinessId) {
       toast({
         title: "Configuration Error",
-        description: "No business is selected. Please select a business from the menu first.",
+        description: "No business is selected.",
         variant: "destructive"
       });
       return;
@@ -53,30 +53,43 @@ export function BookingWizard({ open, onOpenChange, service }: BookingWizardProp
 
     setIsSubmitting(true);
     try {
-      const bookingsCol = collection(firestore, 'clientBusinesses', currentBusinessId, 'bookings');
+      // 1. Single Source of Truth: Ensure grandclient record exists
+      // Using email-based ID for lookup simplicity in this context
+      const grandclientId = customer.email.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const grandclientRef = doc(firestore, 'grandclients', grandclientId);
+      
+      const [firstName, ...lastNameParts] = customer.name.split(' ');
+      const lastName = lastNameParts.join(' ');
+
+      setDocumentNonBlocking(grandclientRef, {
+        "g-client_email": customer.email,
+        "g-client_first": firstName || "Client",
+        "g-client_last": lastName || "New",
+        updatedAt: new Date().toISOString(),
+      }, { merge: true });
+
+      // 2. Create the specific booking
+      const bookingsCol = collection(firestore, 'businesses', currentBusinessId, 'bookings');
       
       const newBooking = {
         bookingTypeId: service.id,
         clientBusinessId: currentBusinessId,
-        availabilitySlotId: "manual-slot",
+        grandclientId: grandclientId,
         bookerName: customer.name,
         bookerEmail: customer.email,
         bookerPhoneNumber: customer.phone,
         numberOfAttendees: attendees,
         bookingStatus: 'confirmed',
-        confirmationSent: true,
-        reminderSent: false,
         startTime: date ? `${format(date, 'yyyy-MM-dd')}T${time}:00` : new Date().toISOString(),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        clientBusinessMembers: { 'placeholder-uid': 'admin' }
       };
 
-      await addDocumentNonBlocking(bookingsCol, newBooking);
+      addDocumentNonBlocking(bookingsCol, newBooking);
       
       toast({
         title: "Booking Confirmed!",
-        description: `You're all set for ${service.name} at ${currentBusinessId}.`,
+        description: `You're all set for ${service.name}.`,
       });
       setStep(4);
     } catch (error) {
@@ -115,44 +128,38 @@ export function BookingWizard({ open, onOpenChange, service }: BookingWizardProp
               <DialogTitle className="text-2xl font-bold">
                 {step < 4 ? `Book ${service.name}` : "Confirmation"}
               </DialogTitle>
-              {step < 4 && (
-                <DialogDescription>
-                  Step {step} of 3: {step === 1 ? 'Schedule' : step === 2 ? 'Your Details' : 'Review'}
-                </DialogDescription>
-              )}
             </DialogHeader>
 
             {step === 1 && (
-              <div className="space-y-8 animate-in fade-in duration-300">
-                <div className="space-y-4">
-                  <Label className="text-xs uppercase tracking-wider text-muted-foreground font-black">1. Select Date</Label>
-                  <div className="border rounded-xl p-2 bg-muted/10 w-full">
+              <div className="space-y-6 animate-in fade-in duration-300">
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase font-black text-muted-foreground">Select Date</Label>
+                  <div className="border rounded-xl p-2 bg-muted/10">
                     {mounted ? (
                       <Calendar
                         mode="single"
                         selected={date}
                         onSelect={setDate}
-                        className="w-full"
-                        disabled={(date) => date < new Date(new Date().setHours(0,0,0,0)) || date > new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)}
+                        disabled={(date) => date < new Date(new Date().setHours(0,0,0,0))}
                       />
                     ) : (
                       <div className="h-[300px] flex items-center justify-center">
-                        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                        <Loader2 className="animate-spin text-primary" />
                       </div>
                     )}
                   </div>
                 </div>
                 
-                <div className="space-y-4">
-                  <Label className="text-xs uppercase tracking-wider text-muted-foreground font-black">2. Select Time</Label>
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase font-black text-muted-foreground">Select Time</Label>
                   <RadioGroup value={time} onValueChange={setTime} className="grid grid-cols-3 gap-2">
                     {timeSlots.map((slot) => (
-                      <div key={slot} className="flex items-center space-x-2">
+                      <div key={slot}>
                         <RadioGroupItem value={slot} id={slot} className="sr-only" />
                         <Label
                           htmlFor={slot}
-                          className={`flex-1 py-3 rounded-lg border cursor-pointer transition-all text-center font-bold text-sm ${
-                            time === slot ? 'bg-primary text-primary-foreground border-primary shadow-lg ring-2 ring-primary/20' : 'bg-muted/30 hover:bg-muted/50 border-border/50'
+                          className={`flex justify-center py-3 rounded-lg border cursor-pointer transition-all ${
+                            time === slot ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted/30'
                           }`}
                         >
                           {slot}
@@ -165,58 +172,45 @@ export function BookingWizard({ open, onOpenChange, service }: BookingWizardProp
             )}
 
             {step === 2 && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                      <Input 
-                        id="name" 
-                        placeholder="Alice Johnson" 
-                        className="pl-10 h-11 rounded-xl"
-                        value={customer.name}
-                        onChange={(e) => setCustomer({...customer, name: e.target.value})}
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email Address</Label>
+              <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Full Name</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
                     <Input 
-                      id="email" 
-                      type="email" 
-                      placeholder="alice@example.com" 
-                      className="h-11 rounded-xl"
-                      value={customer.email}
-                      onChange={(e) => setCustomer({...customer, email: e.target.value})}
+                      id="name" 
+                      placeholder="Jane Doe" 
+                      className="pl-10 h-11"
+                      value={customer.name}
+                      onChange={(e) => setCustomer({...customer, name: e.target.value})}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Phone Number (Optional)</Label>
-                    <Input 
-                      id="phone" 
-                      placeholder="+1 (555) 000-0000" 
-                      className="h-11 rounded-xl"
-                      value={customer.phone}
-                      onChange={(e) => setCustomer({...customer, phone: e.target.value})}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Number of Attendees</Label>
-                    <div className="grid grid-cols-6 gap-2">
-                      {[1, 2, 3, 4, 5, 6].map((num) => (
-                        <Button
-                          key={num}
-                          type="button"
-                          variant={attendees === num ? "default" : "outline"}
-                          className={`h-11 rounded-lg ${num > service.maxCapacity ? 'opacity-20 cursor-not-allowed' : ''}`}
-                          onClick={() => num <= service.maxCapacity && setAttendees(num)}
-                          disabled={num > service.maxCapacity}
-                        >
-                          {num}
-                        </Button>
-                      ))}
-                    </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email Address</Label>
+                  <Input 
+                    id="email" 
+                    type="email" 
+                    placeholder="jane@example.com" 
+                    className="h-11"
+                    value={customer.email}
+                    onChange={(e) => setCustomer({...customer, email: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Attendees</Label>
+                  <div className="grid grid-cols-6 gap-2">
+                    {[1, 2, 3, 4, 5, 6].map((num) => (
+                      <Button
+                        key={num}
+                        variant={attendees === num ? "default" : "outline"}
+                        className={`h-11 ${num > service.maxCapacity ? 'opacity-20 cursor-not-allowed' : ''}`}
+                        onClick={() => num <= service.maxCapacity && setAttendees(num)}
+                        disabled={num > service.maxCapacity}
+                      >
+                        {num}
+                      </Button>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -224,33 +218,17 @@ export function BookingWizard({ open, onOpenChange, service }: BookingWizardProp
 
             {step === 3 && (
               <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                <div className="rounded-2xl border-2 border-primary/20 p-6 bg-primary/5 space-y-4">
-                  <div className="flex justify-between items-start border-b border-primary/10 pb-4">
-                    <div>
-                      <h4 className="font-black text-xl text-primary">{service.name}</h4>
-                      <div className="flex flex-col gap-1 text-sm text-muted-foreground mt-2">
-                        <div className="flex items-center gap-2">
-                          <CalendarIcon className="w-4 h-4 text-primary" />
-                          {date ? format(date, 'PPPP') : 'N/A'}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Clock className="w-4 h-4 text-primary" />
-                          {time} ({service.durationMinutes} mins)
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-black">Total Price</p>
-                      <p className="text-3xl font-black text-primary">${service.price}</p>
-                    </div>
+                <div className="rounded-xl border-2 border-primary/20 p-6 bg-primary/5 space-y-4">
+                  <div>
+                    <h4 className="font-bold text-lg text-primary">{service.name}</h4>
+                    <p className="text-sm text-muted-foreground">
+                      {date ? format(date, 'PPPP') : 'N/A'} at {time}
+                    </p>
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-xs font-black uppercase text-muted-foreground tracking-widest">Customer</p>
-                    <div className="text-sm">
-                      <p className="font-bold">{customer.name}</p>
-                      <p className="text-muted-foreground">{customer.email}</p>
-                      <p className="mt-2 text-primary font-bold">{attendees} attendee{attendees > 1 ? 's' : ''}</p>
-                    </div>
+                  <div className="text-sm space-y-1">
+                    <p className="font-bold">{customer.name}</p>
+                    <p className="text-muted-foreground">{customer.email}</p>
+                    <p className="pt-2 font-bold text-primary">{attendees} attendee{attendees > 1 ? 's' : ''}</p>
                   </div>
                 </div>
               </div>
@@ -258,49 +236,45 @@ export function BookingWizard({ open, onOpenChange, service }: BookingWizardProp
 
             {step === 4 && (
               <div className="py-8 text-center space-y-4 animate-in zoom-in duration-500">
-                <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto text-primary">
-                  <CheckCircle2 className="w-14 h-14" />
+                <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto text-primary">
+                  <CheckCircle2 className="w-10 h-10" />
                 </div>
                 <div>
-                  <h3 className="text-3xl font-black">Booking Confirmed!</h3>
-                  <p className="text-muted-foreground mt-2 px-4 leading-relaxed">
-                    We've sent a confirmation email to <span className="font-bold text-foreground">{customer.email}</span>.
+                  <h3 className="text-2xl font-bold">Booking Confirmed!</h3>
+                  <p className="text-muted-foreground mt-2">
+                    We've sent a confirmation to <span className="font-bold text-foreground">{customer.email}</span>.
                   </p>
                 </div>
-                <Button className="w-full h-14 rounded-2xl mt-8 text-lg font-bold shadow-xl" onClick={handleClose}>
-                  Back to Services
+                <Button className="w-full h-12 mt-4" onClick={handleClose}>
+                  Close
                 </Button>
               </div>
             )}
           </div>
 
           {step < 4 && (
-            <div className="p-6 bg-muted/10 border-t flex justify-between gap-4">
+            <div className="p-6 bg-muted/10 border-t flex justify-between">
               {step > 1 ? (
-                <Button variant="ghost" onClick={handleBack} className="gap-2 font-bold">
-                  <ChevronLeft className="w-4 h-4" /> Back
-                </Button>
+                <Button variant="ghost" onClick={handleBack}>Back</Button>
               ) : (
-                <Button variant="ghost" onClick={handleClose} className="font-bold text-muted-foreground">
-                  Cancel
-                </Button>
+                <div />
               )}
               {step < 3 ? (
                 <Button 
                   onClick={handleNext} 
                   disabled={(step === 1 && !time) || (step === 2 && (!customer.name || !customer.email))}
-                  className="px-8 rounded-xl shadow-lg gap-2 font-bold"
+                  className="px-8 rounded-xl font-bold"
                 >
-                  Continue <ChevronRight className="w-4 h-4" />
+                  Continue
                 </Button>
               ) : (
                 <Button 
                   onClick={handleSubmit} 
                   disabled={isSubmitting}
-                  className="px-10 rounded-xl bg-primary hover:bg-primary/90 shadow-xl gap-2 font-bold text-lg"
+                  className="px-8 rounded-xl font-bold"
                 >
-                  {isSubmitting && <Loader2 className="w-5 h-5 animate-spin" />}
-                  Confirm Reservation
+                  {isSubmitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                  Confirm Booking
                 </Button>
               )}
             </div>
