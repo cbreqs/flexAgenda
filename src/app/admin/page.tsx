@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Navbar } from "@/components/layout/Navbar";
@@ -19,8 +20,7 @@ import {
 import Link from "next/link";
 import { AiRecommendations } from "@/components/admin/AiRecommendations";
 import { useState } from "react";
-import { useCollection } from '@/firebase/firestore/use-collection';
-import { useFirestore, useCurrentBusiness, useMemoFirebase } from '@/firebase/provider';
+import { useCollection, useMemoFirebase, useFirestore, useCurrentBusiness } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
 
 export default function AdminDashboard() {
@@ -30,13 +30,13 @@ export default function AdminDashboard() {
 
   const servicesQuery = useMemoFirebase(() => {
     if (!firestore || !currentBusinessId) return null;
-    return collection(firestore, 'clientBusinesses', currentBusinessId, 'bookingTypes');
+    return collection(firestore, 'businesses', currentBusinessId, 'bookingTypes');
   }, [firestore, currentBusinessId]);
 
   const bookingsQuery = useMemoFirebase(() => {
     if (!firestore || !currentBusinessId) return null;
     return query(
-      collection(firestore, 'clientBusinesses', currentBusinessId, 'bookings'),
+      collection(firestore, 'businesses', currentBusinessId, 'bookings'),
       orderBy('createdAt', 'desc'),
       limit(5)
     );
@@ -57,7 +57,7 @@ export default function AdminDashboard() {
             <div className="space-y-2">
               <h1 className="text-3xl font-headline font-bold">Admin Portal</h1>
               <p className="text-muted-foreground">
-                To manage services and track bookings, please select a client business from your dashboard.
+                To manage services and track bookings, please select a business profile from your dashboard.
               </p>
             </div>
             <Button size="lg" className="w-full rounded-xl font-bold shadow-lg" asChild>
@@ -117,7 +117,7 @@ export default function AdminDashboard() {
               <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">{currentBusinessId} Dashboard</h2>
             </div>
             <h1 className="text-3xl font-headline font-bold">Business Overview</h1>
-            <p className="text-muted-foreground">Manage operations and bookings for your client profile.</p>
+            <p className="text-muted-foreground">Manage operations and bookings for your profile.</p>
           </div>
           <div className="flex gap-3">
             <Button variant="outline" className="gap-2 border-primary/20" onClick={() => setIsAiModalOpen(true)}>
