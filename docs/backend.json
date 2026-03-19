@@ -1,439 +1,84 @@
 {
   "entities": {
-    "ClientProfile": {
+    "ClientBusiness": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "ClientProfile",
+      "title": "ClientBusiness",
       "type": "object",
-      "description": "Represents a business client utilizing the FlexAgenda platform to manage their booking services and configurations.",
+      "description": "Represents a business using the platform.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the ClientProfile entity."
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "contactEmail": { "type": "string", "format": "email" },
+        "members": { 
+          "type": "object",
+          "description": "Map of user IDs to roles (admin, editor, viewer)."
         },
-        "name": {
-          "type": "string",
-          "description": "The official name of the client's business or organization."
-        },
-        "description": {
-          "type": "string",
-          "description": "A brief description of the client's business or the services they offer."
-        },
-        "contactEmail": {
-          "type": "string",
-          "description": "The primary contact email address for the client's administration.",
-          "format": "email"
-        },
-        "phoneNumber": {
-          "type": "string",
-          "description": "The primary contact phone number for the client."
-        },
-        "timezone": {
-          "type": "string",
-          "description": "The IANA timezone identifier for the client's operating location (e.g., 'America/New_York'), crucial for accurate scheduling."
-        }
+        "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": [
-        "id",
-        "name",
-        "contactEmail",
-        "timezone"
-      ]
+      "required": ["id", "name", "members"]
     },
-    "Service": {
+    "BookingType": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Service",
+      "title": "BookingType",
       "type": "object",
-      "description": "Defines a specific bookable service or event type offered by a ClientProfile, including its default parameters.",
+      "description": "A bookable service or event type.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Service entity."
-        },
-        "clientId": {
-          "type": "string",
-          "description": "Reference to the ClientProfile that offers this service. (Relationship: ClientProfile 1:N Service)"
-        },
-        "name": {
-          "type": "string",
-          "description": "The name of the service or event (e.g., 'Haircut', 'Yoga Class', 'Consultation Session')."
-        },
-        "description": {
-          "type": "string",
-          "description": "A detailed description of the service, visible to end-users."
-        },
-        "defaultDurationMinutes": {
-          "type": "number",
-          "description": "The default duration in minutes for a single booking of this service."
-        },
-        "maxAttendeesPerSlot": {
-          "type": "number",
-          "description": "The maximum number of attendees that can be booked for a single time slot of this service (up to 6 as per requirements)."
-        },
-        "isAppointment": {
-          "type": "boolean",
-          "description": "Indicates if this service is a fixed-duration appointment (true) or a more flexible event (false)."
-        },
-        "isEnabled": {
-          "type": "boolean",
-          "description": "A flag indicating whether this service is currently active and available for booking."
-        }
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "defaultDurationMinutes": { "type": "number" },
+        "maxCapacity": { "type": "number" },
+        "price": { "type": "number" },
+        "isActive": { "type": "boolean" }
       },
-      "required": [
-        "id",
-        "clientId",
-        "name",
-        "defaultDurationMinutes",
-        "maxAttendeesPerSlot",
-        "isAppointment",
-        "isEnabled"
-      ]
-    },
-    "AvailabilityRule": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "AvailabilityRule",
-      "type": "object",
-      "description": "Defines recurring patterns of availability for a ClientProfile or a specific Service (e.g., 'Mon-Fri, 9 AM - 5 PM').",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the AvailabilityRule entity."
-        },
-        "clientId": {
-          "type": "string",
-          "description": "Reference to the ClientProfile to whom this availability rule belongs. (Relationship: ClientProfile 1:N AvailabilityRule)"
-        },
-        "serviceId": {
-          "type": "string",
-          "description": "Optional reference to a specific Service if this rule only applies to that service. If null, it applies to the entire client's calendar. (Relationship: Service 1:N AvailabilityRule)"
-        },
-        "dayOfWeek": {
-          "type": "string",
-          "description": "The day of the week for which this rule applies (e.g., 'MONDAY', 'TUESDAY', 'ANY')."
-        },
-        "startTime": {
-          "type": "string",
-          "description": "The start time of the availability period (e.g., '09:00')."
-        },
-        "endTime": {
-          "type": "string",
-          "description": "The end time of the availability period (e.g., '17:00')."
-        },
-        "effectiveStartDate": {
-          "type": "string",
-          "description": "Optional date from which this rule becomes active (e.g., for seasonal availability).",
-          "format": "date"
-        },
-        "effectiveEndDate": {
-          "type": "string",
-          "description": "Optional date until which this rule remains active.",
-          "format": "date"
-        },
-        "description": {
-          "type": "string",
-          "description": "An administrative description of the availability rule."
-        }
-      },
-      "required": [
-        "id",
-        "clientId",
-        "dayOfWeek",
-        "startTime",
-        "endTime"
-      ]
-    },
-    "AvailabilityException": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "AvailabilityException",
-      "type": "object",
-      "description": "Defines one-off deviations from regular availability patterns, such as holidays or special events.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the AvailabilityException entity."
-        },
-        "clientId": {
-          "type": "string",
-          "description": "Reference to the ClientProfile to whom this exception applies. (Relationship: ClientProfile 1:N AvailabilityException)"
-        },
-        "serviceId": {
-          "type": "string",
-          "description": "Optional reference to a specific Service if this exception only affects that service. If null, it affects the entire client's calendar. (Relationship: Service 1:N AvailabilityException)"
-        },
-        "exceptionDate": {
-          "type": "string",
-          "description": "The specific date for which this exception is valid.",
-          "format": "date"
-        },
-        "startTime": {
-          "type": "string",
-          "description": "Optional start time for the exception, if it's a partial day override (e.g., '12:00')."
-        },
-        "endTime": {
-          "type": "string",
-          "description": "Optional end time for the exception, if it's a partial day override (e.g., '13:00')."
-        },
-        "isAvailable": {
-          "type": "boolean",
-          "description": "If true, this exception adds availability. If false, it blocks availability for the specified period."
-        },
-        "reason": {
-          "type": "string",
-          "description": "A brief explanation for the availability exception (e.g., 'Holiday', 'Maintenance', 'Special Event')."
-        }
-      },
-      "required": [
-        "id",
-        "clientId",
-        "exceptionDate",
-        "isAvailable"
-      ]
-    },
-    "BookingSlot": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "BookingSlot",
-      "type": "object",
-      "description": "Represents a specific, bookable time slot for a Service, tracking its capacity and current bookings. These slots are generated based on Service properties and AvailabilityRules/AvailabilityExceptions.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the BookingSlot entity."
-        },
-        "serviceId": {
-          "type": "string",
-          "description": "Reference to the Service this slot is for. (Relationship: Service 1:N BookingSlot)"
-        },
-        "startTime": {
-          "type": "string",
-          "description": "The full date and time when this booking slot begins.",
-          "format": "date-time"
-        },
-        "endTime": {
-          "type": "string",
-          "description": "The full date and time when this booking slot ends.",
-          "format": "date-time"
-        },
-        "totalCapacity": {
-          "type": "number",
-          "description": "The maximum number of attendees this slot can accommodate (derived from Service.maxAttendeesPerSlot)."
-        },
-        "bookedAttendeesCount": {
-          "type": "number",
-          "description": "The current total number of attendees booked for this slot across all individual bookings."
-        },
-        "status": {
-          "type": "string",
-          "description": "The current status of the booking slot (e.g., 'AVAILABLE', 'FULL', 'BLOCKED')."
-        },
-        "isBookable": {
-          "type": "boolean",
-          "description": "A derived flag indicating if the slot can still accept new bookings (true if bookedAttendeesCount < totalCapacity)."
-        }
-      },
-      "required": [
-        "id",
-        "serviceId",
-        "startTime",
-        "endTime",
-        "totalCapacity",
-        "bookedAttendeesCount",
-        "status",
-        "isBookable"
-      ]
+      "required": ["id", "name", "defaultDurationMinutes", "maxCapacity"]
     },
     "Booking": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Booking",
       "type": "object",
-      "description": "Represents an actual reservation made by an end-user for a specific BookingSlot.",
+      "description": "A reservation made by a customer.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Booking entity."
-        },
-        "bookingSlotId": {
-          "type": "string",
-          "description": "Reference to the specific BookingSlot that has been reserved. (Relationship: BookingSlot 1:N Booking)"
-        },
-        "bookerName": {
-          "type": "string",
-          "description": "The full name of the person making the booking."
-        },
-        "bookerEmail": {
-          "type": "string",
-          "description": "The email address of the person making the booking, used for confirmations and reminders.",
-          "format": "email"
-        },
-        "bookerPhoneNumber": {
-          "type": "string",
-          "description": "An optional phone number for the person making the booking."
-        },
-        "numberOfAttendees": {
-          "type": "number",
-          "description": "The number of people included in this specific booking, which contributes to the BookingSlot's capacity."
-        },
-        "bookingDateTime": {
-          "type": "string",
-          "description": "The timestamp when this booking was created.",
-          "format": "date-time"
-        },
-        "status": {
-          "type": "string",
-          "description": "The current status of the booking (e.g., 'CONFIRMED', 'PENDING', 'CANCELLED', 'ATTENDED')."
-        },
-        "confirmationCode": {
-          "type": "string",
-          "description": "A unique, short code provided to the end-user for easy reference, confirmation, or cancellation."
-        },
-        "notes": {
-          "type": "string",
-          "description": "Optional notes or special requests provided by the booker."
-        }
+        "id": { "type": "string" },
+        "bookingTypeId": { "type": "string" },
+        "bookerName": { "type": "string" },
+        "bookerEmail": { "type": "string", "format": "email" },
+        "startTime": { "type": "string", "format": "date-time" },
+        "bookingStatus": { "type": "string", "enum": ["confirmed", "cancelled", "pending"] }
       },
-      "required": [
-        "id",
-        "bookingSlotId",
-        "bookerName",
-        "bookerEmail",
-        "numberOfAttendees",
-        "bookingDateTime",
-        "status",
-        "confirmationCode"
-      ]
+      "required": ["id", "bookingTypeId", "bookerName", "bookerEmail", "startTime", "bookingStatus"]
     }
   },
   "auth": {
-    "providers": [
-      "password",
-      "anonymous"
-    ]
+    "providers": ["password", "anonymous"]
   },
   "firestore": {
     "structure": [
       {
-        "path": "/platform_admins/{uid}",
+        "path": "/clientBusinesses/{businessId}",
         "definition": {
-          "entityName": "PlatformAdmin",
-          "schema": {
-            "$ref": "#/backend/entities/PlatformAdmin"
-          },
-          "description": "Documents indicating platform-wide administrators for FlexAgenda. Used for DBAC (Database Access Control) via existence checks, granting full privileges over ClientProfile creation and management. `uid` parameter refers to the unique user ID of the platform administrator.",
-          "params": [
-            {
-              "name": "uid",
-              "description": "The unique user ID of the platform administrator."
-            }
-          ]
+          "entityName": "ClientBusiness",
+          "schema": { "$ref": "#/backend/entities/ClientBusiness" },
+          "description": "Root business documents."
         }
       },
       {
-        "path": "/client_profiles/{clientId}",
+        "path": "/clientBusinesses/{businessId}/bookingTypes/{typeId}",
         "definition": {
-          "entityName": "ClientProfile",
-          "schema": {
-            "$ref": "#/backend/entities/ClientProfile"
-          },
-          "description": "Stores primary information for each business client. Includes a denormalized `clientAdmins` map (`{ [uid: string]: boolean }`) to grant admin access to this client's data. `clientId` parameter refers to the unique identifier of the client.",
-          "params": [
-            {
-              "name": "clientId",
-              "description": "The unique identifier of the ClientProfile."
-            }
-          ]
+          "entityName": "BookingType",
+          "schema": { "$ref": "#/backend/entities/BookingType" },
+          "description": "Services offered by the business."
         }
       },
       {
-        "path": "/client_profiles/{clientId}/services/{serviceId}",
-        "definition": {
-          "entityName": "Service",
-          "schema": {
-            "$ref": "#/backend/entities/Service"
-          },
-          "description": "Defines services offered by a client. Includes denormalized `clientId` and `clientAdmins` map (`{ [uid: string]: boolean }`) from the parent ClientProfile for authorization independence. `serviceId` parameter refers to the unique identifier of the service.",
-          "params": [
-            {
-              "name": "clientId",
-              "description": "The unique identifier of the ClientProfile."
-            },
-            {
-              "name": "serviceId",
-              "description": "The unique identifier of the Service."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/client_profiles/{clientId}/availability_rules/{ruleId}",
-        "definition": {
-          "entityName": "AvailabilityRule",
-          "schema": {
-            "$ref": "#/backend/entities/AvailabilityRule"
-          },
-          "description": "Defines recurring availability patterns for a client or specific service. Includes denormalized `clientId` and `clientAdmins` map (`{ [uid: string]: boolean }`) from the parent ClientProfile for authorization independence. `ruleId` parameter refers to the unique identifier of the availability rule.",
-          "params": [
-            {
-              "name": "clientId",
-              "description": "The unique identifier of the ClientProfile."
-            },
-            {
-              "name": "ruleId",
-              "description": "The unique identifier of the AvailabilityRule."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/client_profiles/{clientId}/availability_exceptions/{exceptionId}",
-        "definition": {
-          "entityName": "AvailabilityException",
-          "schema": {
-            "$ref": "#/backend/entities/AvailabilityException"
-          },
-          "description": "Defines one-off availability deviations for a client or specific service. Includes denormalized `clientId` and `clientAdmins` map (`{ [uid: string]: boolean }`) from the parent ClientProfile for authorization independence. `exceptionId` parameter refers to the unique identifier of the availability exception.",
-          "params": [
-            {
-              "name": "clientId",
-              "description": "The unique identifier of the ClientProfile."
-            },
-            {
-              "name": "exceptionId",
-              "description": "The unique identifier of the AvailabilityException."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/booking_slots/{slotId}",
-        "definition": {
-          "entityName": "BookingSlot",
-          "schema": {
-            "$ref": "#/backend/entities/BookingSlot"
-          },
-          "description": "Generated bookable time slots for services. Denormalized `clientId`, `serviceId`, and `clientAdmins` map (`{ [uid: string]: boolean }`) from the related ClientProfile for authorization and efficient querying (QAPs). Publicly readable for end-users to find slots when `isBookable` is true. `slotId` parameter refers to the unique identifier of the booking slot.",
-          "params": [
-            {
-              "name": "slotId",
-              "description": "The unique identifier of the BookingSlot."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/bookings/{bookingId}",
+        "path": "/clientBusinesses/{businessId}/bookings/{bookingId}",
         "definition": {
           "entityName": "Booking",
-          "schema": {
-            "$ref": "#/backend/entities/Booking"
-          },
-          "description": "User reservations for booking slots. Denormalized `clientId`, `serviceId`, `bookingSlotId`, and `clientAdmins` map (`{ [uid: string]: boolean }`) for authorization and efficient querying (QAPs). Booker can manage their own booking using `bookerEmail` (if authenticated) or `confirmationCode`. `bookingId` parameter refers to the unique identifier of the booking.",
-          "params": [
-            {
-              "name": "bookingId",
-              "description": "The unique identifier of the Booking."
-            }
-          ]
+          "schema": { "$ref": "#/backend/entities/Booking" },
+          "description": "Customer reservations."
         }
       }
-    ],
-    "reasoning": "The Firestore structure for FlexAgenda is designed with a strong emphasis on Authorization Independence, Structural Segregation, and consistent Access Modeling to ensure security, scalability, and debuggability. All authorization decisions are made without requiring `get()` calls to parent documents, thus enabling atomic operations and simplifying security rules.\n\n**Authorization Independence via Denormalization:**\nTo achieve this critical principle, the `clientAdmins` map, which defines the administrators for a specific `ClientProfile`, is denormalized from the `ClientProfile` document into all its sub-entities (`Service`, `AvailabilityRule`, `AvailabilityException`) and directly into related top-level entities (`BookingSlot`, `Booking`). This means every relevant document contains the necessary authorization context (`clientAdmins: { [uid: string]: boolean }`) to determine if a `request.auth.uid` has administrative access for that specific client's data. This eliminates the need for `get()` operations in security rules when checking client-specific permissions, making rules simpler, more performant, and less prone to transaction-related issues.\n\nFor global FlexAgenda platform administrators, a dedicated top-level collection `/platform_admins/{uid}` is used. An `exists()` check against this collection (which is a form of `get()` for a global role) is generally accepted for high-level, infrequent permission checks and does not violate the spirit of avoiding `get()` for hierarchical data dependencies.\n\n**QAPs (Secure `list` operations):**\n\n1.  **`/client_profiles/{clientId}/services/{serviceId}`:** Public users can list services that are `isEnabled: true`. Client administrators can list all services associated with their `clientId`. The denormalized `clientAdmins` map ensures that rules like `allow read: if request.auth.uid in resource.data.clientAdmins || resource.data.isEnabled == true;` can be evaluated directly on the document without filtering sensitive data client-side. This ensures QAPs for both public visibility and administrative management.\n2.  **`/booking_slots/{slotId}`:** This collection supports efficient `list` operations for end-users by denormalizing `clientId`, `serviceId`, and `isBookable`. End-users can query for `booking_slots` where `isBookable: true`, filtered by `clientId` and `serviceId`. The rule `allow list: if resource.data.isBookable == true;` ensures that only truly bookable slots are returned, adhering to QAPs.\n3.  **`/bookings/{bookingId}`:** This top-level collection allows client administrators to list all bookings for their client (`bookings.where('clientId', '==', '...')`) by checking `request.auth.uid in resource.data.clientAdmins`. Authenticated end-users can list their own bookings (`bookings.where('bookerEmail', '==', request.auth.token.email)`). Unauthenticated users can retrieve a single booking using its `confirmationCode` for read access, but `list` for unauthenticated users is not supported for security reasons, aligning with QAPs.\n\n**Structural Segregation:**\nEach collection primarily holds documents with a homogeneous security posture. While `Service` and `BookingSlot` documents might have both public (`isEnabled`, `isBookable`) and administrative (`clientAdmins`) access requirements, these are managed by explicit fields rather than separating into distinct collections. This avoids over-fragmentation and simplifies data management while maintaining clear security boundaries via security rules.\n\n**Access Modeling:**\n\n*   **Client-Owned Data:** `ClientProfile` serves as the root for a client's specific data. Nested subcollections (`services`, `availability_rules`, `availability_exceptions`) continue the hierarchical path, making ownership explicit.\n*   **Collaborative Data:** `clientAdmins` uses the membership map pattern to grant client-specific administrative roles.\n*   **Global Roles:** `/platform_admins/{uid}` uses the existence pattern for platform-wide administrative privileges."
+    ]
   }
 }

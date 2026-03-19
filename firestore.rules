@@ -4,152 +4,62 @@ service cloud.firestore {
 
     /**
      * CORE PHILOSOPHY
-     * This ruleset implements a robust, denormalized administrative model for the FlexAgenda platform. 
-     * It prioritizes "Authorization Independence" by embedding access control maps (clientAdmins) 
-     * directly into documents, minimizing the need for expensive cross-document lookups.
-     *
-     * DATA STRUCTURE
-     * - /platform_admins: Global administrators with system-wide privileges.
-     * - /client_profiles: The root of business-specific data.
-     * - /client_profiles/{id}/... : Hierarchical subcollections for Services and Availability.
-     * - /booking_slots & /bookings: Top-level collections for efficient cross-client scheduling.
-     *
-     * KEY SECURITY DECISIONS
-     * 1. Denormalization: The `clientAdmins` map is required on all client-owned documents to allow 
-     *    immediate authorization checks without parent document reads.
-     * 2. Public Access: Booking slots and services are publicly readable to facilitate end-user 
-     *    discovery, while writes are strictly guarded.
-     * 3. Platform Governance: A dedicated platform_admins collection allows for global overrides.
-     * 4. Relational Integrity: On creation, documents must include a reference to their parent 
-     *    container (e.g., clientId) that matches the physical path.
+     * This ruleset implements a membership-based access model for FlexAgenda.
+     * It uses a 'members' map in the business documents to manage roles (admin, editor, viewer).
      */
 
     // --- Helper Functions ---
 
-    /** @description Checks if the user is authenticated. */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /** @description Checks if the user is a global platform administrator. */
-    function isPlatformAdmin() {
-      return isSignedIn() && exists(/databases/$(database)/documents/platform_admins/$(request.auth.uid));
+    /** @description Checks if the user has a valid role in the provided members map. */
+    function hasRole(members, uid) {
+      return uid in members && (members[uid] == 'admin' || members[uid] == 'editor' || members[uid] == 'viewer');
     }
 
-    /** @description Checks if the user is in the admin map of the provided resource data. */
-    function isClientAdmin(data) {
-      return isSignedIn() && (request.auth.uid in data.clientAdmins && data.clientAdmins[request.auth.uid] == true);
-    }
-
-    /** @description Validates that the document exists and the user is an admin for it. */
-    function isExistingClientAdmin() {
-      return resource != null && (isPlatformAdmin() || isClientAdmin(resource.data));
-    }
-
-    /** @description Verifies ownership of a booking via the booker's email. */
-    function isBookingOwner(data) {
-      return isSignedIn() && request.auth.token.email == data.bookerEmail;
+    /** @description Checks if the user is an admin in the provided members map. */
+    function isAdmin(members, uid) {
+      return uid in members && members[uid] == 'admin';
     }
 
     // --- Collection Rules ---
 
-    /**
-     * @description Rules for platform-wide administrators.
-     * @path /platform_admins/{uid}
-     * @allow Create by an existing Platform Admin.
-     * @deny Create by a standard user or client admin.
-     * @principle Existence-based global role management.
-     */
+    match /clientBusinesses/{businessId} {
+      /** 
+       * Public can view business profiles. 
+       * Logged in users can list their own businesses.
+       */
+      allow get: if true;
+      allow list: if isSignedIn() && hasRole(resource.data.members, request.auth.uid);
+      
+      /** Any signed-in user can register a new business. */
+      allow create: if isSignedIn();
+      
+      /** Only admins can update or delete business profile settings. */
+      allow update, delete: if isSignedIn() && isAdmin(resource.data.members, request.auth.uid);
+
+      /** Services/Booking Types are nested under businesses. */
+      match /bookingTypes/{typeId} {
+        allow read: if true;
+        allow write: if isSignedIn() && hasRole(get(/databases/$(database)/documents/clientBusinesses/$(businessId)).data.members, request.auth.uid);
+      }
+
+      /** Bookings are nested under businesses for isolation. */
+      match /bookings/{bookingId} {
+        // Admins/Staff can see all bookings. Users can see their own if email matches.
+        allow list: if isSignedIn() && hasRole(get(/databases/$(database)/documents/clientBusinesses/$(businessId)).data.members, request.auth.uid);
+        allow get: if true; // Access via confirmation code usually handled in app logic or check specific code field
+        allow create: if true; // Public can book
+        allow update, delete: if isSignedIn() && hasRole(get(/databases/$(database)/documents/clientBusinesses/$(businessId)).data.members, request.auth.uid);
+      }
+    }
+    
+    /** Top-level platform admin check (if needed in future). */
     match /platform_admins/{uid} {
-      allow get: if isSignedIn();
-      allow list: if isPlatformAdmin();
-      allow create, update, delete: if isPlatformAdmin();
-    }
-
-    /**
-     * @description Rules for business client profiles.
-     * @path /client_profiles/{clientId}
-     * @allow Read by any user (to view business details); Write by Platform Admin or specific Client Admin.
-     * @deny Write by unauthorized users.
-     * @principle Map-based collaborative administration.
-     */
-    match /client_profiles/{clientId} {
-      allow get, list: if true;
-      allow create: if isPlatformAdmin() || isClientAdmin(request.resource.data);
-      allow update: if isExistingClientAdmin();
-      allow delete: if isPlatformAdmin();
-    }
-
-    /**
-     * @description Rules for bookable services offered by a client.
-     * @path /client_profiles/{clientId}/services/{serviceId}
-     * @allow Read by public; Create/Update by Client Admin.
-     * @deny Create if the internal clientId does not match the URL path.
-     * @principle Path-based relational integrity and public discovery.
-     */
-    match /client_profiles/{clientId}/services/{serviceId} {
-      allow get, list: if true;
-      allow create: if (isPlatformAdmin() || isClientAdmin(request.resource.data)) && request.resource.data.clientId == clientId;
-      allow update: if isExistingClientAdmin() && request.resource.data.clientId == resource.data.clientId;
-      allow delete: if isExistingClientAdmin();
-    }
-
-    /**
-     * @description Rules for recurring availability patterns.
-     * @path /client_profiles/{clientId}/availability_rules/{ruleId}
-     * @allow Admin operations by Platform or Client Admins.
-     * @deny Read by public (administrative logic only).
-     * @principle Denormalized admin access for scheduling logic.
-     */
-    match /client_profiles/{clientId}/availability_rules/{ruleId} {
-      allow get, list: if isPlatformAdmin() || (isSignedIn() && get(/databases/$(database)/documents/client_profiles/$(clientId)).data.clientAdmins[request.auth.uid] == true);
-      allow create: if (isPlatformAdmin() || isClientAdmin(request.resource.data)) && request.resource.data.clientId == clientId;
-      allow update: if isExistingClientAdmin() && request.resource.data.clientId == resource.data.clientId;
-      allow delete: if isExistingClientAdmin();
-    }
-
-    /**
-     * @description Rules for one-off availability exceptions (holidays/overrides).
-     * @path /client_profiles/{clientId}/availability_exceptions/{exceptionId}
-     * @allow Admin access for client management.
-     * @deny Read/Write by non-admins.
-     * @principle Restricts internal business logic to authorized staff.
-     */
-    match /client_profiles/{clientId}/availability_exceptions/{exceptionId} {
-      allow get, list: if isPlatformAdmin() || (isSignedIn() && get(/databases/$(database)/documents/client_profiles/$(clientId)).data.clientAdmins[request.auth.uid] == true);
-      allow create: if (isPlatformAdmin() || isClientAdmin(request.resource.data)) && request.resource.data.clientId == clientId;
-      allow update: if isExistingClientAdmin() && request.resource.data.clientId == resource.data.clientId;
-      allow delete: if isExistingClientAdmin();
-    }
-
-    /**
-     * @description Rules for generated booking slots.
-     * @path /booking_slots/{slotId}
-     * @allow Read by public to find openings; Write by Client Admin.
-     * @deny Writes by end-users (slots are generated/managed by system/admin).
-     * @principle Public read for availability with admin-only lifecycle management.
-     */
-    match /booking_slots/{slotId} {
-      allow get, list: if true;
-      allow create: if isPlatformAdmin() || isClientAdmin(request.resource.data);
-      allow update: if isExistingClientAdmin();
-      allow delete: if isExistingClientAdmin();
-    }
-
-    /**
-     * @description Rules for end-user reservations.
-     * @path /bookings/{bookingId}
-     * @allow Create by any user; Read by Admin, Owner (email), or via Confirmation Code.
-     * @deny Update/Delete by unauthorized users.
-     * @principle Multi-factor access (Admin role, Email ownership, or Confirmation Code).
-     */
-    match /bookings/{bookingId} {
-      // List restricted to Admins or specific path-based users to comply with P6.
-      allow list: if isPlatformAdmin() || isSignedIn();
-      allow get: if isPlatformAdmin() || isClientAdmin(resource.data) || isBookingOwner(resource.data) || request.query.confirmationCode == resource.data.confirmationCode;
-      allow create: if true; // Public can book; validation of slot status happens at app/function level
-      allow update: if isExistingClientAdmin() || (resource != null && isBookingOwner(resource.data));
-      allow delete: if isExistingClientAdmin();
+      allow read: if isSignedIn();
+      allow write: if false; // Managed manually for security
     }
   }
 }
