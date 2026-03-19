@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Navbar } from "@/components/layout/Navbar";
@@ -7,10 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Building2, Plus, CheckCircle2, LayoutDashboard, Trash2, Loader2, Sparkles } from "lucide-react";
+import { Building2, Plus, CheckCircle2, LayoutDashboard, Trash2, Loader2, Sparkles, LogIn } from "lucide-react";
 import Link from "next/link";
-import { useCurrentBusiness, useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking } from "@/firebase";
-import { collection, doc } from "firebase/firestore";
+import { useCurrentBusiness, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking, useUser } from "@/firebase";
+import { collection, doc, query, where } from "firebase/firestore";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -19,20 +20,26 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 export default function BusinessSelectionPage() {
   const { currentBusinessId, setCurrentBusinessId } = useCurrentBusiness();
   const firestore = useFirestore();
+  const { user, isUserLoading } = useUser();
   const { toast } = useToast();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [newBiz, setNewBiz] = useState({ name: "", id: "", description: "", email: "" });
 
   const businessesQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return collection(firestore, 'clientBusinesses');
-  }, [firestore]);
+    if (!firestore || !user) return null;
+    // Query only businesses where the logged-in user is a member
+    // Using the 'members' map logic: where('members.UID', '!=', null)
+    return query(
+      collection(firestore, 'clientBusinesses'),
+      where(`members.${user.uid}`, 'in', ['admin', 'editor', 'viewer'])
+    );
+  }, [firestore, user]);
 
   const { data: businesses, isLoading } = useCollection(businessesQuery);
 
   const handleCreateBusiness = () => {
-    if (!firestore || !newBiz.name || !newBiz.id) {
-      toast({ title: "Validation Error", description: "Name and ID are required.", variant: "destructive" });
+    if (!firestore || !newBiz.name || !newBiz.id || !user) {
+      toast({ title: "Validation Error", description: "Name, ID, and Login are required.", variant: "destructive" });
       return;
     }
 
@@ -44,7 +51,7 @@ export default function BusinessSelectionPage() {
       contactEmail: newBiz.email,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      members: { 'placeholder-uid': 'admin' } // Initial admin
+      members: { [user.uid]: 'admin' } // The current user is the admin
     };
 
     setDocumentNonBlocking(docRef, businessData, { merge: true });
@@ -67,6 +74,28 @@ export default function BusinessSelectionPage() {
     toast({ title: "Business Removed", description: `${name} has been deleted.` });
   };
 
+  if (!user && !isUserLoading) {
+    return (
+      <div className="flex flex-col min-h-screen bg-background">
+        <Navbar />
+        <main className="flex-1 flex items-center justify-center p-4">
+          <Card className="max-w-md w-full text-center p-8 space-y-6">
+            <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto">
+              <LogIn className="w-8 h-8 text-primary" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold">Authentication Required</h2>
+              <p className="text-muted-foreground">Please log in to your client account to manage your businesses.</p>
+            </div>
+            <Button className="w-full h-12 font-bold" asChild>
+              <Link href="/login">Go to Login</Link>
+            </Button>
+          </Card>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <Navbar />
@@ -74,9 +103,9 @@ export default function BusinessSelectionPage() {
       <main className="flex-1 p-4 md:p-8 max-w-6xl mx-auto w-full space-y-10">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="text-center md:text-left space-y-2">
-            <h1 className="text-4xl font-headline font-bold">Client Businesses</h1>
+            <h1 className="text-4xl font-headline font-bold">Your Businesses</h1>
             <p className="text-muted-foreground max-w-xl">
-              Manage your client profiles. Switch between them to configure unique services and schedules.
+              Select a business profile to manage its specific services and schedule.
             </p>
           </div>
           
@@ -175,7 +204,7 @@ export default function BusinessSelectionPage() {
                     {isActive ? (
                       <Button className="flex-1 rounded-xl gap-2 font-bold shadow-md" asChild>
                         <Link href="/admin">
-                          Dashboard <LayoutDashboard className="w-4 h-4" />
+                          Admin Panel <LayoutDashboard className="w-4 h-4" />
                         </Link>
                       </Button>
                     ) : (
@@ -184,7 +213,7 @@ export default function BusinessSelectionPage() {
                         className="flex-1 rounded-xl border-primary/50 text-primary hover:bg-primary/10 font-bold"
                         onClick={() => setCurrentBusinessId(biz.id)}
                       >
-                        Switch
+                        Select
                       </Button>
                     )}
                     <Button 
@@ -205,10 +234,10 @@ export default function BusinessSelectionPage() {
             <Building2 className="w-12 h-12 text-muted-foreground/50" />
             <div className="space-y-1">
               <h3 className="text-xl font-bold">No Businesses Found</h3>
-              <p className="text-muted-foreground">Get started by registering your first client business profile.</p>
+              <p className="text-muted-foreground">Register your first client business profile to start managing.</p>
             </div>
             <Button onClick={() => setIsCreateOpen(true)} className="mt-4 rounded-xl font-bold">
-              Register First Client
+              Register First Business
             </Button>
           </div>
         )}
@@ -219,9 +248,9 @@ export default function BusinessSelectionPage() {
               <Sparkles className="w-8 h-8 text-primary" />
             </div>
             <div className="space-y-2 text-center md:text-left">
-              <h3 className="text-xl font-bold">Multi-Client Architecture</h3>
+              <h3 className="text-xl font-bold">Isolated Client Environments</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                FlexAgenda is built to scale. Each business you add gets its own isolated subcollections in Firestore, ensuring data privacy and dedicated service configurations for every client you manage.
+                As a client, you only see the businesses you have permission to manage. FlexAgenda ensures that your services, bookings, and customer data remain strictly isolated from other clients on the platform.
               </p>
             </div>
           </div>
