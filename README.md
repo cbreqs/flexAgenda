@@ -6,7 +6,7 @@ FlexAgenda is a sophisticated, multi-tenant scheduling solution built with Next.
 
 - **Multi-Tenant Isolation**: Each business operates in its own secure data silo.
 - **Dynamic Branding**: The entire UI (colors, icons, logic) transforms based on the active business profile (e.g., Elevated Adventures vs. Wands and Ledgers).
-- **Single Source of Truth**: Customer data is centralized across the platform while keeping bookings business-specific.
+- **Single Source of Truth**: Customer data is centralized across the platform in a master `grandclients` collection while keeping bookings business-specific.
 - **AI-Powered Insights**: Integrated Genkit flows for generating service descriptions and optimizing schedules.
 - **Role-Based Access**: Strict separation between Owner management and Customer booking portals.
 

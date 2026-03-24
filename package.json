@@ -2,6 +2,7 @@
   "name": "flex-agenda",
   "version": "0.1.0",
   "private": true,
+  "description": "A professional multi-tenant booking and scheduling platform with AI-powered insights.",
   "scripts": {
     "dev": "next dev --turbopack -p 9002",
     "genkit:dev": "genkit start -- tsx src/ai/dev.ts",
