@@ -25,6 +25,28 @@
     --ring: 224.3 76.3% 48%;
     --radius: 0.75rem;
   }
+
+  /* Elevated Adventures Theme */
+  [data-theme='elevated-adventures'] {
+    --primary: 142 76% 36%; /* Emerald Green */
+    --primary-foreground: 0 0% 100%;
+    --accent: 200 95% 17%; /* Deep Forest Blue */
+    --background: 142 70% 5%;
+    --card: 142 70% 7%;
+    --border: 142 30% 20%;
+    --ring: 142 76% 36%;
+  }
+
+  /* Wands and Ledgers Theme */
+  [data-theme='wands-ledgers'] {
+    --primary: 262 83% 58%; /* Arcane Purple */
+    --primary-foreground: 0 0% 100%;
+    --accent: 45 93% 47%; /* Magical Gold */
+    --background: 262 80% 5%;
+    --card: 262 80% 8%;
+    --border: 262 40% 25%;
+    --ring: 45 93% 47%;
+  }
 }
 
 @layer base {

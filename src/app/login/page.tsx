@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -8,22 +7,29 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAuth, initiateEmailSignIn, initiateEmailSignUp, useUser } from "@/firebase";
-import { Loader2, Mail, Lock, UserPlus, LogIn, CheckCircle2 } from "lucide-react";
+import { useAuth, initiateEmailSignIn, initiateEmailSignUp, useUser, useCurrentBusiness } from "@/firebase";
+import { Loader2, Mail, Lock, UserPlus, LogIn, CheckCircle2, Wand2, Mountain, ShieldCheck, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loginType, setLoginType] = useState<"client" | "grandclient">("client");
   const auth = useAuth();
   const { user } = useUser();
   const router = useRouter();
   const { toast } = useToast();
+  const { currentBusinessId } = useCurrentBusiness();
 
   if (user) {
-    router.push("/admin/businesses");
+    if (loginType === "client") {
+      router.push("/admin/businesses");
+    } else {
+      router.push("/");
+    }
   }
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -32,7 +38,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       initiateEmailSignIn(auth, email, password);
-      toast({ title: "Welcome back!", description: "Logging you in..." });
+      toast({ title: "Welcome back!", description: loginType === "client" ? "Accessing management dashboard..." : "Accessing your bookings..." });
     } catch (err) {
       toast({ title: "Error", description: "Invalid credentials.", variant: "destructive" });
     } finally {
@@ -46,7 +52,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       initiateEmailSignUp(auth, email, password);
-      toast({ title: "Account created!", description: "You can now register your business." });
+      toast({ title: "Account created!", description: "Success! You are now registered." });
     } catch (err) {
       toast({ title: "Error", description: "Could not create account.", variant: "destructive" });
     } finally {
@@ -54,28 +60,78 @@ export default function LoginPage() {
     }
   };
 
+  const isElevated = currentBusinessId === "elevated-adventures";
+  const isWands = currentBusinessId === "wands-ledgers";
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Navbar />
-      <main className="flex-1 flex items-center justify-center p-4">
-        <div className="max-w-md w-full space-y-8 animate-in fade-in zoom-in duration-500">
+      <main className="flex-1 flex items-center justify-center p-4 relative overflow-hidden">
+        {/* Decorative Background Elements */}
+        {isElevated && (
+          <div className="absolute inset-0 opacity-10 pointer-events-none">
+            <Mountain className="absolute -top-10 -left-10 w-64 h-64 text-primary" />
+            <Mountain className="absolute bottom-10 right-10 w-96 h-96 text-primary rotate-12" />
+          </div>
+        )}
+        {isWands && (
+          <div className="absolute inset-0 opacity-10 pointer-events-none">
+            <Wand2 className="absolute top-20 right-20 w-48 h-48 text-accent animate-pulse" />
+            <div className="absolute top-1/2 left-10 w-2 h-2 bg-accent rounded-full animate-ping" />
+          </div>
+        )}
+
+        <div className="max-w-md w-full space-y-8 animate-in fade-in zoom-in duration-500 z-10">
           <div className="text-center space-y-2">
-            <h1 className="text-3xl font-headline font-bold">Client Portal</h1>
-            <p className="text-muted-foreground">Log in to manage your services and bookings.</p>
+            <div className="flex justify-center mb-4">
+              <div className={cn(
+                "w-16 h-16 rounded-2xl flex items-center justify-center shadow-2xl",
+                isElevated ? "bg-primary text-white" : isWands ? "bg-primary text-accent" : "bg-muted"
+              )}>
+                {isElevated ? <Mountain className="w-10 h-10" /> : isWands ? <Wand2 className="w-10 h-10" /> : <ShieldCheck className="w-10 h-10" />}
+              </div>
+            </div>
+            <h1 className="text-3xl font-headline font-bold">
+              {currentBusinessId ? (isElevated ? "Elevated Portal" : "The Arcane Gateway") : "Portal Access"}
+            </h1>
+            <p className="text-muted-foreground">
+              {currentBusinessId ? `Login to ${currentBusinessId.replace('-', ' ')}` : "Select a portal type to continue"}
+            </p>
+          </div>
+
+          <div className="flex justify-center gap-4 mb-8">
+            <Button 
+              variant={loginType === "client" ? "default" : "outline"} 
+              onClick={() => setLoginType("client")}
+              className="rounded-full gap-2 font-bold"
+            >
+              <ShieldCheck className="w-4 h-4" /> Client (Owner)
+            </Button>
+            <Button 
+              variant={loginType === "grandclient" ? "default" : "outline"} 
+              onClick={() => setLoginType("grandclient")}
+              className="rounded-full gap-2 font-bold"
+            >
+              <User className="w-4 h-4" /> Grandclient
+            </Button>
           </div>
 
           <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-8">
-              <TabsTrigger value="login" className="font-bold">Login</TabsTrigger>
-              <TabsTrigger value="signup" className="font-bold">Sign Up</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 mb-8 bg-muted/50 p-1 rounded-xl">
+              <TabsTrigger value="login" className="font-bold rounded-lg">Login</TabsTrigger>
+              <TabsTrigger value="signup" className="font-bold rounded-lg">Sign Up</TabsTrigger>
             </TabsList>
 
             <TabsContent value="login">
-              <Card className="border-primary/20 shadow-xl">
+              <Card className="border-primary/20 shadow-2xl backdrop-blur-md bg-card/80">
                 <form onSubmit={handleSignIn}>
                   <CardHeader>
-                    <CardTitle>Welcome Back</CardTitle>
-                    <CardDescription>Enter your email to access your business dashboard.</CardDescription>
+                    <CardTitle>{loginType === "client" ? "Management Login" : "End-User Login"}</CardTitle>
+                    <CardDescription>
+                      {loginType === "client" 
+                        ? "Enter your credentials to manage services and bookings." 
+                        : "Login to view your existing reservations."}
+                    </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
@@ -85,8 +141,8 @@ export default function LoginPage() {
                         <Input 
                           id="email" 
                           type="email" 
-                          placeholder="name@business.com" 
-                          className="pl-10"
+                          placeholder="name@domain.com" 
+                          className="pl-10 rounded-xl"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
                           required
@@ -101,7 +157,7 @@ export default function LoginPage() {
                           id="password" 
                           type="password" 
                           placeholder="••••••••" 
-                          className="pl-10"
+                          className="pl-10 rounded-xl"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           required
@@ -110,7 +166,7 @@ export default function LoginPage() {
                     </div>
                   </CardContent>
                   <CardFooter>
-                    <Button type="submit" className="w-full font-bold h-11" disabled={loading}>
+                    <Button type="submit" className="w-full font-bold h-12 rounded-xl text-lg shadow-lg" disabled={loading}>
                       {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogIn className="w-5 h-5 mr-2" />}
                       Log In
                     </Button>
@@ -120,11 +176,15 @@ export default function LoginPage() {
             </TabsContent>
 
             <TabsContent value="signup">
-              <Card className="border-primary/20 shadow-xl">
+              <Card className="border-primary/20 shadow-2xl backdrop-blur-md bg-card/80">
                 <form onSubmit={handleSignUp}>
                   <CardHeader>
-                    <CardTitle>Create Account</CardTitle>
-                    <CardDescription>Start managing your business on FlexAgenda today.</CardDescription>
+                    <CardTitle>Join {currentBusinessId || "FlexAgenda"}</CardTitle>
+                    <CardDescription>
+                      {loginType === "client" 
+                        ? "Create your owner account to start managing businesses." 
+                        : "Register to track your bookings and schedules."}
+                    </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
@@ -134,8 +194,8 @@ export default function LoginPage() {
                         <Input 
                           id="email-signup" 
                           type="email" 
-                          placeholder="name@business.com" 
-                          className="pl-10"
+                          placeholder="name@domain.com" 
+                          className="pl-10 rounded-xl"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
                           required
@@ -150,7 +210,7 @@ export default function LoginPage() {
                           id="password-signup" 
                           type="password" 
                           placeholder="••••••••" 
-                          className="pl-10"
+                          className="pl-10 rounded-xl"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           required
@@ -159,12 +219,12 @@ export default function LoginPage() {
                     </div>
                   </CardContent>
                   <CardFooter className="flex flex-col gap-4">
-                    <Button type="submit" className="w-full font-bold h-11" disabled={loading}>
+                    <Button type="submit" className="w-full font-bold h-12 rounded-xl text-lg shadow-lg" disabled={loading}>
                       {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <UserPlus className="w-5 h-5 mr-2" />}
                       Create Account
                     </Button>
-                    <p className="text-[10px] text-center text-muted-foreground">
-                      By signing up, you agree to our Terms of Service and Privacy Policy.
+                    <p className="text-[10px] text-center text-muted-foreground uppercase tracking-widest font-bold">
+                      Gated multi-tenant security enabled
                     </p>
                   </CardFooter>
                 </form>
@@ -173,11 +233,13 @@ export default function LoginPage() {
           </Tabs>
 
           <div className="grid grid-cols-1 gap-4 pt-4">
-            <div className="flex items-start gap-3 p-4 bg-muted/30 rounded-xl border border-border/50">
+            <div className="flex items-start gap-3 p-4 bg-primary/5 rounded-2xl border border-primary/20 backdrop-blur-sm">
               <CheckCircle2 className="w-5 h-5 text-primary shrink-0" />
               <div className="space-y-1">
-                <p className="text-sm font-bold">Isolated Environments</p>
-                <p className="text-xs text-muted-foreground">Each business account gets a dedicated space for its own services and client data.</p>
+                <p className="text-sm font-bold">Secure Access</p>
+                <p className="text-xs text-muted-foreground">
+                  {isElevated ? "Your adventure data is encrypted and secure." : isWands ? "Your magical ledgers are protected by arcane encryption." : "Multi-tenant data isolation is active."}
+                </p>
               </div>
             </div>
           </div>
