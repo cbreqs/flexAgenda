@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -26,7 +27,8 @@ export default function LoginPage() {
 
   // Handle redirection as a side effect after successful login
   useEffect(() => {
-    if (user && !loading && !isUserLoading) {
+    // Only redirect if we have a non-anonymous user (a real logged-in account)
+    if (user && !user.isAnonymous && !loading && !isUserLoading) {
       if (loginType === "client") {
         router.push("/admin/businesses");
       } else {
