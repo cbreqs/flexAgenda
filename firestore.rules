@@ -17,9 +17,11 @@ service cloud.firestore {
 
     // Businesses collection
     match /businesses/{businessId} {
+      // Public needs to see name/description to render the booking page
       allow get: if true;
-      // List permission requires the query to be filtered by the user's role in the members map
-      allow list: if isSignedIn() && request.auth.uid in resource.data.members && resource.data.members[request.auth.uid] in ['admin', 'editor', 'viewer'];
+      // List permission requires the query to be filtered by membership
+      allow list: if isSignedIn() && request.auth.uid in resource.data.members;
+      
       allow create: if isSignedIn();
       allow update, delete: if isSignedIn() && isAdmin(resource.data.members, request.auth.uid);
 
@@ -29,18 +31,24 @@ service cloud.firestore {
       }
 
       match /bookings/{bookingId} {
-        allow list: if isSignedIn() && hasRole(get(/databases/$(database)/documents/businesses/$(businessId)).data.members, request.auth.uid);
-        allow get: if true;
-        allow create: if true;
+        // Business owners see all. Grandclients see only theirs.
+        allow list: if isSignedIn() && (
+          hasRole(get(/databases/$(database)/documents/businesses/$(businessId)).data.members, request.auth.uid) ||
+          (resource == null || resource.data.grandclientId == request.auth.uid)
+        );
+        allow get: if isSignedIn() && (
+          hasRole(get(/databases/$(database)/documents/businesses/$(businessId)).data.members, request.auth.uid) ||
+          resource.data.grandclientId == request.auth.uid
+        );
+        allow create: if true; // Allow anyone to request a booking (linked via grandclientId if logged in)
         allow update, delete: if isSignedIn() && hasRole(get(/databases/$(database)/documents/businesses/$(businessId)).data.members, request.auth.uid);
       }
     }
 
     // Grandclients collection (Centralized end-user data)
-    match /grandclients/{clientId} {
-      allow read: if true; // Public verification allowed
-      allow create, update: if true; // Clients and users can manage records
-      allow delete: if false;
+    // Users can only manage their own profile based on Auth UID
+    match /grandclients/{uid} {
+      allow read, write: if isSignedIn() && request.auth.uid == uid;
     }
   }
 }

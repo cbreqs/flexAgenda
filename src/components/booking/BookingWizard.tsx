@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { Service } from "@/lib/types";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
@@ -11,8 +11,8 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { CheckCircle2, ChevronRight, ChevronLeft, Calendar as CalendarIcon, Clock, User, Loader2 } from "lucide-react";
-import { useFirestore, addDocumentNonBlocking, setDocumentNonBlocking, useCurrentBusiness } from "@/firebase";
+import { CheckCircle2, User, Loader2, Calendar as CalendarIcon, Clock } from "lucide-react";
+import { useFirestore, addDocumentNonBlocking, setDocumentNonBlocking, useCurrentBusiness, useUser } from "@/firebase";
 import { collection, doc } from "firebase/firestore";
 
 interface BookingWizardProps {
@@ -32,11 +32,15 @@ export function BookingWizard({ open, onOpenChange, service }: BookingWizardProp
   
   const { toast } = useToast();
   const firestore = useFirestore();
+  const { user } = useUser();
   const { currentBusinessId } = useCurrentBusiness();
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    if (user && user.email) {
+      setCustomer(prev => ({ ...prev, email: user.email || "", name: user.displayName || "" }));
+    }
+  }, [user]);
 
   const handleNext = () => setStep(step + 1);
   const handleBack = () => setStep(step - 1);
@@ -54,18 +58,20 @@ export function BookingWizard({ open, onOpenChange, service }: BookingWizardProp
     setIsSubmitting(true);
     try {
       // 1. Single Source of Truth: Ensure grandclient record exists
-      // Using email-based ID for lookup simplicity in this context
-      const grandclientId = customer.email.toLowerCase().replace(/[^a-z0-9]/g, '');
+      // We use the authenticated UID if available for security, fallback to email-based ID for anonymous
+      const grandclientId = user?.uid || customer.email.toLowerCase().replace(/[^a-z0-9]/g, '');
       const grandclientRef = doc(firestore, 'grandclients', grandclientId);
       
       const [firstName, ...lastNameParts] = customer.name.split(' ');
       const lastName = lastNameParts.join(' ');
 
+      // Save user profile data centrally
       setDocumentNonBlocking(grandclientRef, {
         "g-client_email": customer.email,
         "g-client_first": firstName || "Client",
         "g-client_last": lastName || "New",
         updatedAt: new Date().toISOString(),
+        uid: user?.uid || null
       }, { merge: true });
 
       // 2. Create the specific booking
@@ -73,7 +79,7 @@ export function BookingWizard({ open, onOpenChange, service }: BookingWizardProp
       
       const newBooking = {
         bookingTypeId: service.id,
-        clientBusinessId: currentBusinessId,
+        businessId: currentBusinessId,
         grandclientId: grandclientId,
         bookerName: customer.name,
         bookerEmail: customer.email,
@@ -103,7 +109,10 @@ export function BookingWizard({ open, onOpenChange, service }: BookingWizardProp
     onOpenChange(false);
     setTimeout(() => {
       setStep(1);
-      setCustomer({ name: "", email: "", phone: "" });
+      // Reset if user is not logged in
+      if (!user) {
+        setCustomer({ name: "", email: "", phone: "" });
+      }
       setTime("");
     }, 300);
   };
@@ -134,7 +143,7 @@ export function BookingWizard({ open, onOpenChange, service }: BookingWizardProp
               <div className="space-y-6 animate-in fade-in duration-300">
                 <div className="space-y-2">
                   <Label className="text-xs uppercase font-black text-muted-foreground">Select Date</Label>
-                  <div className="border rounded-xl p-2 bg-muted/10">
+                  <div className="border rounded-xl p-2 bg-muted/10 flex justify-center">
                     {mounted ? (
                       <Calendar
                         mode="single"
@@ -159,7 +168,7 @@ export function BookingWizard({ open, onOpenChange, service }: BookingWizardProp
                         <Label
                           htmlFor={slot}
                           className={`flex justify-center py-3 rounded-lg border cursor-pointer transition-all ${
-                            time === slot ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted/30'
+                            time === slot ? 'bg-primary text-primary-foreground border-primary font-bold' : 'bg-muted/30 hover:bg-muted/50'
                           }`}
                         >
                           {slot}
@@ -180,7 +189,7 @@ export function BookingWizard({ open, onOpenChange, service }: BookingWizardProp
                     <Input 
                       id="name" 
                       placeholder="Jane Doe" 
-                      className="pl-10 h-11"
+                      className="pl-10 h-11 rounded-xl"
                       value={customer.name}
                       onChange={(e) => setCustomer({...customer, name: e.target.value})}
                     />
@@ -192,19 +201,21 @@ export function BookingWizard({ open, onOpenChange, service }: BookingWizardProp
                     id="email" 
                     type="email" 
                     placeholder="jane@example.com" 
-                    className="h-11"
+                    className="h-11 rounded-xl"
                     value={customer.email}
                     onChange={(e) => setCustomer({...customer, email: e.target.value})}
+                    disabled={!!user?.email}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Attendees</Label>
+                  <Label>Number of Attendees</Label>
                   <div className="grid grid-cols-6 gap-2">
                     {[1, 2, 3, 4, 5, 6].map((num) => (
                       <Button
                         key={num}
+                        type="button"
                         variant={attendees === num ? "default" : "outline"}
-                        className={`h-11 ${num > service.maxCapacity ? 'opacity-20 cursor-not-allowed' : ''}`}
+                        className={`h-11 rounded-lg ${num > service.maxCapacity ? 'opacity-20 cursor-not-allowed' : ''}`}
                         onClick={() => num <= service.maxCapacity && setAttendees(num)}
                         disabled={num > service.maxCapacity}
                       >
@@ -212,6 +223,7 @@ export function BookingWizard({ open, onOpenChange, service }: BookingWizardProp
                       </Button>
                     ))}
                   </div>
+                  <p className="text-[10px] text-muted-foreground italic">Max capacity for this service: {service.maxCapacity}</p>
                 </div>
               </div>
             )}
@@ -219,34 +231,48 @@ export function BookingWizard({ open, onOpenChange, service }: BookingWizardProp
             {step === 3 && (
               <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                 <div className="rounded-xl border-2 border-primary/20 p-6 bg-primary/5 space-y-4">
-                  <div>
-                    <h4 className="font-bold text-lg text-primary">{service.name}</h4>
-                    <p className="text-sm text-muted-foreground">
-                      {date ? format(date, 'PPPP') : 'N/A'} at {time}
-                    </p>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h4 className="font-bold text-lg text-primary">{service.name}</h4>
+                      <p className="text-sm text-muted-foreground flex items-center gap-1">
+                        <CalendarIcon className="w-3 h-3" />
+                        {date ? format(date, 'PPPP') : 'N/A'}
+                      </p>
+                      <p className="text-sm text-muted-foreground flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {time}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xl font-black text-primary">${service.price}</p>
+                    </div>
                   </div>
-                  <div className="text-sm space-y-1">
+                  <div className="border-t pt-4 space-y-1">
+                    <p className="text-xs uppercase font-black text-muted-foreground tracking-widest">Customer</p>
                     <p className="font-bold">{customer.name}</p>
-                    <p className="text-muted-foreground">{customer.email}</p>
-                    <p className="pt-2 font-bold text-primary">{attendees} attendee{attendees > 1 ? 's' : ''}</p>
+                    <p className="text-sm text-muted-foreground">{customer.email}</p>
+                    <p className="pt-2 text-sm font-bold flex items-center gap-2">
+                      <User className="w-4 h-4 text-primary" />
+                      {attendees} Attendee{attendees > 1 ? 's' : ''}
+                    </p>
                   </div>
                 </div>
               </div>
             )}
 
             {step === 4 && (
-              <div className="py-8 text-center space-y-4 animate-in zoom-in duration-500">
-                <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto text-primary">
-                  <CheckCircle2 className="w-10 h-10" />
+              <div className="py-12 text-center space-y-6 animate-in zoom-in duration-500">
+                <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto text-primary">
+                  <CheckCircle2 className="w-12 h-12" />
                 </div>
-                <div>
-                  <h3 className="text-2xl font-bold">Booking Confirmed!</h3>
-                  <p className="text-muted-foreground mt-2">
-                    We've sent a confirmation to <span className="font-bold text-foreground">{customer.email}</span>.
+                <div className="space-y-2">
+                  <h3 className="text-3xl font-black tracking-tighter">Confirmed!</h3>
+                  <p className="text-muted-foreground max-w-[250px] mx-auto">
+                    Your spot for <span className="text-foreground font-bold">{service.name}</span> is reserved.
                   </p>
                 </div>
-                <Button className="w-full h-12 mt-4" onClick={handleClose}>
-                  Close
+                <Button className="w-full h-12 rounded-xl font-bold shadow-xl" onClick={handleClose}>
+                  Awesome, thanks!
                 </Button>
               </div>
             )}
@@ -255,7 +281,7 @@ export function BookingWizard({ open, onOpenChange, service }: BookingWizardProp
           {step < 4 && (
             <div className="p-6 bg-muted/10 border-t flex justify-between">
               {step > 1 ? (
-                <Button variant="ghost" onClick={handleBack}>Back</Button>
+                <Button variant="ghost" onClick={handleBack} className="font-bold">Back</Button>
               ) : (
                 <div />
               )}
@@ -263,7 +289,7 @@ export function BookingWizard({ open, onOpenChange, service }: BookingWizardProp
                 <Button 
                   onClick={handleNext} 
                   disabled={(step === 1 && !time) || (step === 2 && (!customer.name || !customer.email))}
-                  className="px-8 rounded-xl font-bold"
+                  className="px-10 rounded-xl font-bold shadow-lg"
                 >
                   Continue
                 </Button>
@@ -271,10 +297,9 @@ export function BookingWizard({ open, onOpenChange, service }: BookingWizardProp
                 <Button 
                   onClick={handleSubmit} 
                   disabled={isSubmitting}
-                  className="px-8 rounded-xl font-bold"
+                  className="px-10 rounded-xl font-bold shadow-lg bg-primary hover:bg-primary/90"
                 >
-                  {isSubmitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                  Confirm Booking
+                  {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : "Confirm Booking"}
                 </Button>
               )}
             </div>
