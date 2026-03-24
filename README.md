@@ -14,13 +14,24 @@ FlexAgenda is a sophisticated, multi-tenant scheduling solution built with Next.
 - **AI**: Firebase Genkit with Gemini
 - **UI/Styling**: Tailwind CSS, Shadcn UI, Lucide Icons
 
-## 🤖 AI Collaboration
-If you are using an AI assistant to help develop this project, please point it to `docs/AI_HANDOFF.md`. That file contains specific instructions on the coding patterns and data architecture used in this repository.
-
 ## 📦 Getting Started
 1. **Install Dependencies**: `npm install`
 2. **Environment Setup**: Create a `.env` file with your Firebase and Google GenAI keys.
 3. **Run Development**: `npm run dev`
+
+## 📤 Pushing to GitHub (Troubleshooting)
+If you see a `[rejected] ... (fetch first)` error when pushing, it's because GitHub created files (like a README) that aren't on your computer yet. 
+
+**Option A: Overwrite GitHub with your local code (Recommended for first push)**
+```bash
+git push -u origin apptest --force
+```
+
+**Option B: Merge GitHub's files into your local code**
+```bash
+git pull origin apptest --allow-unrelated-histories
+git push -u origin apptest
+```
 
 ---
 Built with ⚡ and designed for high-scale multi-tenant operations.
