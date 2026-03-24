@@ -37,7 +37,7 @@ export function BookingWizard({ open, onOpenChange, service }: BookingWizardProp
 
   useEffect(() => {
     setMounted(true);
-    if (user && user.email) {
+    if (user && user.email && !user.isAnonymous) {
       setCustomer(prev => ({ ...prev, email: user.email || "", name: user.displayName || "" }));
     }
   }, [user]);
@@ -59,22 +59,23 @@ export function BookingWizard({ open, onOpenChange, service }: BookingWizardProp
     try {
       // 1. Single Source of Truth: Ensure grandclient record exists
       // We use the authenticated UID if available for security, fallback to email-based ID for anonymous
-      const grandclientId = user?.uid || customer.email.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const grandclientId = user && !user.isAnonymous ? user.uid : customer.email.toLowerCase().replace(/[^a-z0-9]/g, '');
       const grandclientRef = doc(firestore, 'grandclients', grandclientId);
       
-      const [firstName, ...lastNameParts] = customer.name.split(' ');
-      const lastName = lastNameParts.join(' ');
+      const nameParts = customer.name.split(' ');
+      const firstName = nameParts[0] || "Client";
+      const lastName = nameParts.slice(1).join(' ') || "New";
 
-      // Save user profile data centrally
+      // Save user profile data centrally in the master 'grandclients' collection
       setDocumentNonBlocking(grandclientRef, {
         "g-client_email": customer.email,
-        "g-client_first": firstName || "Client",
-        "g-client_last": lastName || "New",
+        "g-client_first": firstName,
+        "g-client_last": lastName,
         updatedAt: new Date().toISOString(),
         uid: user?.uid || null
       }, { merge: true });
 
-      // 2. Create the specific booking
+      // 2. Create the specific booking for this specific business
       const bookingsCol = collection(firestore, 'businesses', currentBusinessId, 'bookings');
       
       const newBooking = {
@@ -95,7 +96,7 @@ export function BookingWizard({ open, onOpenChange, service }: BookingWizardProp
       
       toast({
         title: "Booking Confirmed!",
-        description: `You're all set for ${service.name}.`,
+        description: `Your reservation for ${service.name} has been saved to the database.`,
       });
       setStep(4);
     } catch (error) {
@@ -109,8 +110,8 @@ export function BookingWizard({ open, onOpenChange, service }: BookingWizardProp
     onOpenChange(false);
     setTimeout(() => {
       setStep(1);
-      // Reset if user is not logged in
-      if (!user) {
+      // Reset if user is not logged in or anonymous
+      if (!user || user.isAnonymous) {
         setCustomer({ name: "", email: "", phone: "" });
       }
       setTime("");
@@ -204,7 +205,7 @@ export function BookingWizard({ open, onOpenChange, service }: BookingWizardProp
                     className="h-11 rounded-xl"
                     value={customer.email}
                     onChange={(e) => setCustomer({...customer, email: e.target.value})}
-                    disabled={!!user?.email}
+                    disabled={user && !user.isAnonymous && !!user.email}
                   />
                 </div>
                 <div className="space-y-2">
@@ -248,7 +249,7 @@ export function BookingWizard({ open, onOpenChange, service }: BookingWizardProp
                     </div>
                   </div>
                   <div className="border-t pt-4 space-y-1">
-                    <p className="text-xs uppercase font-black text-muted-foreground tracking-widest">Customer</p>
+                    <p className="text-xs uppercase font-black text-muted-foreground tracking-widest">Customer Profile</p>
                     <p className="font-bold">{customer.name}</p>
                     <p className="text-sm text-muted-foreground">{customer.email}</p>
                     <p className="pt-2 text-sm font-bold flex items-center gap-2">
@@ -257,6 +258,9 @@ export function BookingWizard({ open, onOpenChange, service }: BookingWizardProp
                     </p>
                   </div>
                 </div>
+                <p className="text-[10px] text-center text-muted-foreground italic uppercase tracking-widest">
+                  This booking will be saved to your persistent profile
+                </p>
               </div>
             )}
 
@@ -268,7 +272,7 @@ export function BookingWizard({ open, onOpenChange, service }: BookingWizardProp
                 <div className="space-y-2">
                   <h3 className="text-3xl font-black tracking-tighter">Confirmed!</h3>
                   <p className="text-muted-foreground max-w-[250px] mx-auto">
-                    Your spot for <span className="text-foreground font-bold">{service.name}</span> is reserved.
+                    Your spot for <span className="text-foreground font-bold">{service.name}</span> is reserved and synced to your profile.
                   </p>
                 </div>
                 <Button className="w-full h-12 rounded-xl font-bold shadow-xl" onClick={handleClose}>
@@ -299,7 +303,7 @@ export function BookingWizard({ open, onOpenChange, service }: BookingWizardProp
                   disabled={isSubmitting}
                   className="px-10 rounded-xl font-bold shadow-lg bg-primary hover:bg-primary/90"
                 >
-                  {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : "Confirm Booking"}
+                  {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : "Confirm & Save"}
                 </Button>
               )}
             </div>
