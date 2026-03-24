@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,19 +19,21 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [loginType, setLoginType] = useState<"client" | "grandclient">("client");
   const auth = useAuth();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
   const { currentBusinessId } = useCurrentBusiness();
 
-  // Redirect based on role after successful login
-  if (user && !loading) {
-    if (loginType === "client") {
-      router.push("/admin/businesses");
-    } else {
-      router.push("/");
+  // Handle redirection as a side effect after successful login
+  useEffect(() => {
+    if (user && !loading && !isUserLoading) {
+      if (loginType === "client") {
+        router.push("/admin/businesses");
+      } else {
+        router.push("/");
+      }
     }
-  }
+  }, [user, loading, isUserLoading, loginType, router]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
