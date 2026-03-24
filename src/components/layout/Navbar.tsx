@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -15,7 +16,7 @@ import { useRouter } from "next/navigation";
 
 export function Navbar() {
   const pathname = usePathname();
-  const isAdmin = pathname.startsWith("/admin");
+  const isAdminView = pathname.startsWith("/admin");
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const { user } = useUser();
@@ -46,7 +47,7 @@ export function Navbar() {
     }
   };
 
-  const navItems = isAdmin 
+  const navItems = isAdminView 
     ? [
         { name: "Businesses", href: "/admin/businesses", icon: Building2 },
         { name: "Services", href: "/admin/services", icon: Settings },
@@ -54,7 +55,7 @@ export function Navbar() {
       ]
     : [
         { name: "Home", href: "/", icon: User },
-        { name: "Admin Portal", href: "/admin/businesses", icon: ShieldCheck },
+        { name: "Owner Portal", href: "/admin/businesses", icon: ShieldCheck },
       ];
 
   const currentBusinessName = businesses?.find(b => b.id === currentBusinessId)?.name || "Select Business";
@@ -68,7 +69,7 @@ export function Navbar() {
             <span className="font-bold text-2xl text-primary tracking-tight hidden sm:inline-block">FlexAgenda</span>
           </Link>
           
-          {mounted && user && (isAdmin || businesses && businesses.length > 0) && (
+          {mounted && user && (isAdminView || businesses && businesses.length > 0) && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="h-9 gap-2 border bg-muted/30">
@@ -98,7 +99,7 @@ export function Navbar() {
         </div>
 
         <div className="hidden md:flex items-center gap-8">
-          {isAdmin && currentBusinessId && (
+          {isAdminView && currentBusinessId && (
             <Link href="/" className="flex items-center gap-2 text-sm font-bold text-accent hover:text-primary transition-colors">
               <ExternalLink className="w-4 h-4" /> View Customer Page
             </Link>
@@ -134,7 +135,7 @@ export function Navbar() {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="text-xs">
-                  Role: <span className="ml-auto font-black uppercase text-primary">{isAdmin ? "Owner" : "Customer"}</span>
+                  Role: <span className="ml-auto font-black uppercase text-primary">{isAdminView ? "Owner" : "Customer"}</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut} className="text-destructive font-bold cursor-pointer">
@@ -166,7 +167,7 @@ export function Navbar() {
                     <LogOut className="w-5 h-5 mr-2" /> Sign Out
                   </Button>
                 ) : (
-                  <Button asChild><Link href="/login"><LogIn className="w-5 h-5 mr-2" /> Client Portal</Link></Button>
+                  <Button asChild><Link href="/login"><LogIn className="w-5 h-5 mr-2" /> Owner Portal</Link></Button>
                 )}
               </div>
             </SheetContent>

@@ -67,7 +67,7 @@ export default function Home() {
               {!user && (
                 <Button size="lg" variant="outline" className="rounded-2xl px-10 h-16 text-lg font-bold border-primary/20 bg-background/50 backdrop-blur-sm" asChild>
                   <Link href="/login">
-                    Client Access <ArrowRight className="ml-2 w-5 h-5" />
+                    Owner Portal <ArrowRight className="ml-2 w-5 h-5" />
                   </Link>
                 </Button>
               )}

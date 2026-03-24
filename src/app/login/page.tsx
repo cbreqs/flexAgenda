@@ -18,18 +18,17 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [loginType, setLoginType] = useState<"client" | "grandclient">("client");
+  const [loginType, setLoginType] = useState<"owner" | "customer">("owner");
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
   const { currentBusinessId } = useCurrentBusiness();
 
-  // Handle redirection as a side effect after successful login
   useEffect(() => {
-    // Only redirect if we have a non-anonymous user (a real logged-in account)
+    // Only redirect if we have a non-anonymous user
     if (user && !user.isAnonymous && !loading && !isUserLoading) {
-      if (loginType === "client") {
+      if (loginType === "owner") {
         router.push("/admin/businesses");
       } else {
         router.push("/");
@@ -43,7 +42,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       initiateEmailSignIn(auth, email, password);
-      toast({ title: "Welcome back!", description: loginType === "client" ? "Accessing management dashboard..." : "Accessing your bookings..." });
+      toast({ title: "Welcome back!", description: loginType === "owner" ? "Accessing Owner Portal..." : "Accessing your bookings..." });
     } catch (err) {
       toast({ title: "Error", description: "Invalid credentials.", variant: "destructive" });
       setLoading(false);
@@ -91,11 +90,11 @@ export default function LoginPage() {
                 "w-16 h-16 rounded-2xl flex items-center justify-center shadow-2xl",
                 isElevated ? "bg-primary text-white" : isWands ? "bg-primary text-accent" : "bg-muted"
               )}>
-                {loginType === "client" ? <ShieldCheck className="w-10 h-10" /> : <User className="w-10 h-10" />}
+                {loginType === "owner" ? <ShieldCheck className="w-10 h-10" /> : <User className="w-10 h-10" />}
               </div>
             </div>
             <h1 className="text-3xl font-headline font-bold">
-              {loginType === "client" ? "Owner Portal" : "Customer Portal"}
+              {loginType === "owner" ? "Owner Portal" : "Customer Portal"}
             </h1>
             <p className="text-muted-foreground">
               {currentBusinessId ? `Accessing ${currentBusinessId.replace('-', ' ')}` : "Login to your account"}
@@ -104,18 +103,18 @@ export default function LoginPage() {
 
           <div className="flex justify-center gap-2 mb-8 bg-muted/20 p-1.5 rounded-2xl border">
             <Button 
-              variant={loginType === "client" ? "default" : "ghost"} 
-              onClick={() => setLoginType("client")}
-              className={cn("flex-1 rounded-xl gap-2 font-bold h-11", loginType === "client" && "shadow-md")}
+              variant={loginType === "owner" ? "default" : "ghost"} 
+              onClick={() => setLoginType("owner")}
+              className={cn("flex-1 rounded-xl gap-2 font-bold h-11", loginType === "owner" && "shadow-md")}
             >
-              <ShieldCheck className="w-4 h-4" /> Client
+              <ShieldCheck className="w-4 h-4" /> Business Owner
             </Button>
             <Button 
-              variant={loginType === "grandclient" ? "default" : "ghost"} 
-              onClick={() => setLoginType("grandclient")}
-              className={cn("flex-1 rounded-xl gap-2 font-bold h-11", loginType === "grandclient" && "shadow-md")}
+              variant={loginType === "customer" ? "default" : "ghost"} 
+              onClick={() => setLoginType("customer")}
+              className={cn("flex-1 rounded-xl gap-2 font-bold h-11", loginType === "customer" && "shadow-md")}
             >
-              <User className="w-4 h-4" /> Grandclient
+              <User className="w-4 h-4" /> Customer
             </Button>
           </div>
 
@@ -129,9 +128,9 @@ export default function LoginPage() {
               <Card className="border-primary/20 shadow-2xl backdrop-blur-md bg-card/80">
                 <form onSubmit={handleSignIn}>
                   <CardHeader>
-                    <CardTitle>{loginType === "client" ? "Admin Access" : "Customer Access"}</CardTitle>
+                    <CardTitle>{loginType === "owner" ? "Owner Access" : "Customer Access"}</CardTitle>
                     <CardDescription>
-                      {loginType === "client" 
+                      {loginType === "owner" 
                         ? "Manage your business profiles and bookings." 
                         : "View your personal schedule and book new services."}
                     </CardDescription>
@@ -171,7 +170,7 @@ export default function LoginPage() {
                   <CardFooter>
                     <Button type="submit" className="w-full font-bold h-12 rounded-xl text-lg shadow-lg" disabled={loading}>
                       {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogIn className="w-5 h-5 mr-2" />}
-                      Log In as {loginType === "client" ? "Owner" : "Customer"}
+                      Log In as {loginType === "owner" ? "Owner" : "Customer"}
                     </Button>
                   </CardFooter>
                 </form>
@@ -184,7 +183,7 @@ export default function LoginPage() {
                   <CardHeader>
                     <CardTitle>Create Account</CardTitle>
                     <CardDescription>
-                      {loginType === "client" 
+                      {loginType === "owner" 
                         ? "Register as a business owner to start managing services." 
                         : "Register as a customer to track your personal appointments."}
                     </CardDescription>
@@ -224,7 +223,7 @@ export default function LoginPage() {
                   <CardFooter className="flex flex-col gap-4">
                     <Button type="submit" className="w-full font-bold h-12 rounded-xl text-lg shadow-lg" disabled={loading}>
                       {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <UserPlus className="w-5 h-5 mr-2" />}
-                      Register {loginType === "client" ? "Owner" : "Customer"}
+                      Register {loginType === "owner" ? "Owner" : "Customer"}
                     </Button>
                     <p className="text-[10px] text-center text-muted-foreground uppercase tracking-widest font-bold">
                       Multi-tenant data isolation active
