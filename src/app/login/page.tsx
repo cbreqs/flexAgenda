@@ -24,7 +24,8 @@ export default function LoginPage() {
   const { toast } = useToast();
   const { currentBusinessId } = useCurrentBusiness();
 
-  if (user) {
+  // Redirect based on role after successful login
+  if (user && !loading) {
     if (loginType === "client") {
       router.push("/admin/businesses");
     } else {
@@ -41,7 +42,6 @@ export default function LoginPage() {
       toast({ title: "Welcome back!", description: loginType === "client" ? "Accessing management dashboard..." : "Accessing your bookings..." });
     } catch (err) {
       toast({ title: "Error", description: "Invalid credentials.", variant: "destructive" });
-    } finally {
       setLoading(false);
     }
   };
@@ -55,7 +55,6 @@ export default function LoginPage() {
       toast({ title: "Account created!", description: "Success! You are now registered." });
     } catch (err) {
       toast({ title: "Error", description: "Could not create account.", variant: "destructive" });
-    } finally {
       setLoading(false);
     }
   };
@@ -88,29 +87,29 @@ export default function LoginPage() {
                 "w-16 h-16 rounded-2xl flex items-center justify-center shadow-2xl",
                 isElevated ? "bg-primary text-white" : isWands ? "bg-primary text-accent" : "bg-muted"
               )}>
-                {isElevated ? <Mountain className="w-10 h-10" /> : isWands ? <Wand2 className="w-10 h-10" /> : <ShieldCheck className="w-10 h-10" />}
+                {loginType === "client" ? <ShieldCheck className="w-10 h-10" /> : <User className="w-10 h-10" />}
               </div>
             </div>
             <h1 className="text-3xl font-headline font-bold">
-              {currentBusinessId ? (isElevated ? "Elevated Portal" : "The Arcane Gateway") : "Portal Access"}
+              {loginType === "client" ? "Owner Portal" : "Customer Portal"}
             </h1>
             <p className="text-muted-foreground">
-              {currentBusinessId ? `Login to ${currentBusinessId.replace('-', ' ')}` : "Select a portal type to continue"}
+              {currentBusinessId ? `Accessing ${currentBusinessId.replace('-', ' ')}` : "Login to your account"}
             </p>
           </div>
 
-          <div className="flex justify-center gap-4 mb-8">
+          <div className="flex justify-center gap-2 mb-8 bg-muted/20 p-1.5 rounded-2xl border">
             <Button 
-              variant={loginType === "client" ? "default" : "outline"} 
+              variant={loginType === "client" ? "default" : "ghost"} 
               onClick={() => setLoginType("client")}
-              className="rounded-full gap-2 font-bold"
+              className={cn("flex-1 rounded-xl gap-2 font-bold h-11", loginType === "client" && "shadow-md")}
             >
-              <ShieldCheck className="w-4 h-4" /> Client (Owner)
+              <ShieldCheck className="w-4 h-4" /> Client
             </Button>
             <Button 
-              variant={loginType === "grandclient" ? "default" : "outline"} 
+              variant={loginType === "grandclient" ? "default" : "ghost"} 
               onClick={() => setLoginType("grandclient")}
-              className="rounded-full gap-2 font-bold"
+              className={cn("flex-1 rounded-xl gap-2 font-bold h-11", loginType === "grandclient" && "shadow-md")}
             >
               <User className="w-4 h-4" /> Grandclient
             </Button>
@@ -126,11 +125,11 @@ export default function LoginPage() {
               <Card className="border-primary/20 shadow-2xl backdrop-blur-md bg-card/80">
                 <form onSubmit={handleSignIn}>
                   <CardHeader>
-                    <CardTitle>{loginType === "client" ? "Management Login" : "End-User Login"}</CardTitle>
+                    <CardTitle>{loginType === "client" ? "Admin Access" : "Customer Access"}</CardTitle>
                     <CardDescription>
                       {loginType === "client" 
-                        ? "Enter your credentials to manage services and bookings." 
-                        : "Login to view your existing reservations."}
+                        ? "Manage your business profiles and bookings." 
+                        : "View your personal schedule and book new services."}
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -168,7 +167,7 @@ export default function LoginPage() {
                   <CardFooter>
                     <Button type="submit" className="w-full font-bold h-12 rounded-xl text-lg shadow-lg" disabled={loading}>
                       {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogIn className="w-5 h-5 mr-2" />}
-                      Log In
+                      Log In as {loginType === "client" ? "Owner" : "Customer"}
                     </Button>
                   </CardFooter>
                 </form>
@@ -179,11 +178,11 @@ export default function LoginPage() {
               <Card className="border-primary/20 shadow-2xl backdrop-blur-md bg-card/80">
                 <form onSubmit={handleSignUp}>
                   <CardHeader>
-                    <CardTitle>Join {currentBusinessId || "FlexAgenda"}</CardTitle>
+                    <CardTitle>Create Account</CardTitle>
                     <CardDescription>
                       {loginType === "client" 
-                        ? "Create your owner account to start managing businesses." 
-                        : "Register to track your bookings and schedules."}
+                        ? "Register as a business owner to start managing services." 
+                        : "Register as a customer to track your personal appointments."}
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -221,10 +220,10 @@ export default function LoginPage() {
                   <CardFooter className="flex flex-col gap-4">
                     <Button type="submit" className="w-full font-bold h-12 rounded-xl text-lg shadow-lg" disabled={loading}>
                       {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <UserPlus className="w-5 h-5 mr-2" />}
-                      Create Account
+                      Register {loginType === "client" ? "Owner" : "Customer"}
                     </Button>
                     <p className="text-[10px] text-center text-muted-foreground uppercase tracking-widest font-bold">
-                      Gated multi-tenant security enabled
+                      Multi-tenant data isolation active
                     </p>
                   </CardFooter>
                 </form>
@@ -236,9 +235,9 @@ export default function LoginPage() {
             <div className="flex items-start gap-3 p-4 bg-primary/5 rounded-2xl border border-primary/20 backdrop-blur-sm">
               <CheckCircle2 className="w-5 h-5 text-primary shrink-0" />
               <div className="space-y-1">
-                <p className="text-sm font-bold">Secure Access</p>
+                <p className="text-sm font-bold">Privacy Guaranteed</p>
                 <p className="text-xs text-muted-foreground">
-                  {isElevated ? "Your adventure data is encrypted and secure." : isWands ? "Your magical ledgers are protected by arcane encryption." : "Multi-tenant data isolation is active."}
+                  Your data is securely isolated from other users and businesses.
                 </p>
               </div>
             </div>

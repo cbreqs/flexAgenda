@@ -1,9 +1,8 @@
-
 "use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Calendar, Settings, UserCircle, Menu, Building2, Briefcase, PlusCircle, ExternalLink, LogOut, LogIn, ChevronDown } from "lucide-react";
+import { Calendar, Settings, UserCircle, Menu, Building2, Briefcase, PlusCircle, ExternalLink, LogOut, LogIn, ChevronDown, User, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
@@ -12,6 +11,7 @@ import { useUser, useCurrentBusiness, useCollection, useMemoFirebase, useAuth, u
 import { collection, query, where } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useRouter } from "next/navigation";
 
 export function Navbar() {
   const pathname = usePathname();
@@ -21,6 +21,7 @@ export function Navbar() {
   const { user } = useUser();
   const firestore = useFirestore();
   const auth = useAuth();
+  const router = useRouter();
   const { currentBusinessId, setCurrentBusinessId } = useCurrentBusiness();
 
   useEffect(() => {
@@ -37,10 +38,11 @@ export function Navbar() {
 
   const { data: businesses } = useCollection(businessesQuery);
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     if (auth) {
-      signOut(auth);
+      await signOut(auth);
       setCurrentBusinessId('');
+      router.push('/login');
     }
   };
 
@@ -51,11 +53,11 @@ export function Navbar() {
         { name: "Bookings", href: "/admin/bookings", icon: Calendar },
       ]
     : [
-        { name: "Home", href: "/", icon: Building2 },
-        { name: "Management", href: "/admin/businesses", icon: UserCircle },
+        { name: "Home", href: "/", icon: User },
+        { name: "Admin Portal", href: "/admin/businesses", icon: ShieldCheck },
       ];
 
-  const currentBusinessName = businesses?.find(b => b.id === currentBusinessId)?.name || "Select Profile";
+  const currentBusinessName = businesses?.find(b => b.id === currentBusinessId)?.name || "Select Business";
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur px-4 py-3">
@@ -66,7 +68,7 @@ export function Navbar() {
             <span className="font-bold text-2xl text-primary tracking-tight hidden sm:inline-block">FlexAgenda</span>
           </Link>
           
-          {mounted && user && (
+          {mounted && user && (isAdmin || businesses && businesses.length > 0) && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="h-9 gap-2 border bg-muted/30">
@@ -76,7 +78,7 @@ export function Navbar() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-64 p-2 shadow-2xl">
-                <DropdownMenuLabel className="text-[10px] uppercase font-black px-3 py-2 tracking-widest text-muted-foreground">Your Profiles</DropdownMenuLabel>
+                <DropdownMenuLabel className="text-[10px] uppercase font-black px-3 py-2 tracking-widest text-muted-foreground">Switch Profile</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {businesses?.map((biz: any) => (
                   <DropdownMenuItem key={biz.id} onClick={() => setCurrentBusinessId(biz.id)} className={cn(currentBusinessId === biz.id && "bg-primary text-primary-foreground")}>
@@ -87,7 +89,7 @@ export function Navbar() {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link href="/admin/businesses" className="text-primary font-bold">
-                    <PlusCircle className="w-4 h-4 mr-2" /> Manage All
+                    <PlusCircle className="w-4 h-4 mr-2" /> Manage All Profiles
                   </Link>
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -98,7 +100,7 @@ export function Navbar() {
         <div className="hidden md:flex items-center gap-8">
           {isAdmin && currentBusinessId && (
             <Link href="/" className="flex items-center gap-2 text-sm font-bold text-accent hover:text-primary transition-colors">
-              <ExternalLink className="w-4 h-4" /> View Page
+              <ExternalLink className="w-4 h-4" /> View Customer Page
             </Link>
           )}
           {navItems.map((item) => {
@@ -117,9 +119,32 @@ export function Navbar() {
               </Link>
             )
           })}
-          {mounted && user && (
-            <Button variant="ghost" size="sm" onClick={handleSignOut} className="text-muted-foreground hover:text-destructive">
-              <LogOut className="w-4 h-4 mr-2" /> Sign Out
+          {mounted && user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="rounded-full gap-2 font-bold bg-muted/50">
+                  <UserCircle className="w-4 h-4" />
+                  <span className="max-w-[100px] truncate">{user.email?.split('@')[0]}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 p-2 shadow-2xl">
+                <DropdownMenuLabel className="flex flex-col gap-1">
+                  <span className="text-sm font-bold">My Account</span>
+                  <span className="text-[10px] text-muted-foreground truncate">{user.email}</span>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="text-xs">
+                  Role: <span className="ml-auto font-black uppercase text-primary">{isAdmin ? "Owner" : "Customer"}</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut} className="text-destructive font-bold cursor-pointer">
+                  <LogOut className="w-4 h-4 mr-2" /> Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button asChild size="sm" className="rounded-full font-bold shadow-lg">
+              <Link href="/login">Portal Access</Link>
             </Button>
           )}
         </div>
